@@ -26,12 +26,9 @@ app.use("/uploads", express.static("uploads"));
 // ============================
 // 3. Base de datos
 // ============================
-const db = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "nutricion",
-  password: "7826",
-  port: 5432,
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 // Crear tablas si no existen
