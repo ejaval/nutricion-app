@@ -33,7 +33,7 @@ const pool = new Pool({
 
 // Crear tablas si no existen
 (async () => {
-  await db.query(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       nombre TEXT UNIQUE,
@@ -42,7 +42,7 @@ const pool = new Pool({
     )
   `);
 
-  await db.query(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS mensajes (
       id SERIAL PRIMARY KEY,
       fromId INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -54,10 +54,14 @@ const pool = new Pool({
   `);
 
   // Usuario inicial
-  const { rows } = await db.query(`SELECT * FROM users WHERE LOWER(nombre) = LOWER($1)`, ["katya cruz"]);
+  const { rows } = await pool.query(
+    `SELECT * FROM users WHERE LOWER(nombre) = LOWER($1)`,
+    ["katya cruz"]
+  );
+
   if (rows.length === 0) {
     const hash = bcrypt.hashSync("123456", 8);
-    await db.query(
+    await pool.query(
       `INSERT INTO users (nombre, password, role) VALUES ($1, $2, $3)`,
       ["katya cruz", hash, "nutricionista"]
     );
@@ -115,7 +119,10 @@ app.post("/login", async (req, res) => {
   }
 
   try {
-    const { rows } = await db.query(`SELECT * FROM users WHERE LOWER(nombre)=LOWER($1)`, [nombre]);
+    const { rows } = await pool.query(
+      `SELECT * FROM users WHERE LOWER(nombre)=LOWER($1)`,
+      [nombre]
+    );
     const user = rows[0];
 
     if (!user) return res.status(400).json({ error: "Usuario no existe" });
@@ -123,8 +130,14 @@ app.post("/login", async (req, res) => {
     const validPassword = bcrypt.compareSync(password, user.password);
     if (!validPassword) return res.status(400).json({ error: "Contraseña incorrecta" });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, { expiresIn: "12h" });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET,
+      { expiresIn: "12h" }
+    );
+
     res.json({ token, id: user.id, role: user.role });
+
   } catch (err) {
     console.error("Error en login:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -141,17 +154,21 @@ app.post("/create-user", auth, async (req, res) => {
     return res.status(400).json({ error: "Todos los campos son requeridos" });
 
   try {
-    const existing = await db.query(`SELECT id FROM users WHERE LOWER(nombre)=LOWER($1)`, [nombre]);
+    const existing = await pool.query(
+      `SELECT id FROM users WHERE LOWER(nombre)=LOWER($1)`,
+      [nombre]
+    );
     if (existing.rows.length > 0)
       return res.status(400).json({ error: "Ya existe un usuario con ese nombre" });
 
     const hash = bcrypt.hashSync(password, 8);
-    const result = await db.query(
+    const result = await pool.query(
       `INSERT INTO users (nombre, password, role) VALUES ($1, $2, $3) RETURNING id`,
       [nombre, hash, role]
     );
 
     res.json({ id: result.rows[0].id, nombre, role });
+
   } catch (err) {
     console.error("Error creando usuario:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -160,10 +177,15 @@ app.post("/create-user", auth, async (req, res) => {
 
 // 🔄 LISTAR USUARIOS
 app.get("/users", auth, async (req, res) => {
-  if (req.user.role !== "nutricionista") return res.status(403).json({ error: "Acceso denegado" });
+  if (req.user.role !== "nutricionista")
+    return res.status(403).json({ error: "Acceso denegado" });
+
   try {
-    const { rows } = await db.query(`SELECT id, nombre, role FROM users ORDER BY id DESC`);
+    const { rows } = await pool.query(
+      `SELECT id, nombre, role FROM users ORDER BY id DESC`
+    );
     res.json(rows);
+
   } catch (err) {
     console.error("Error listando usuarios:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -181,13 +203,17 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   }
 
   try {
-    const result = await db.query(
+    const result = await pool.query(
       `INSERT INTO mensajes (fromId, "toId", mensaje, archivo)
        VALUES ($1, $2, $3, $4) RETURNING id, fecha`,
       [req.user.id, toId || 0, mensaje, archivo]
     );
 
-    const { rows } = await db.query(`SELECT nombre FROM users WHERE id=$1`, [req.user.id]);
+    const { rows } = await pool.query(
+      `SELECT nombre FROM users WHERE id=$1`,
+      [req.user.id]
+    );
+
     const fromNombre = rows[0]?.nombre || "Desconocido";
 
     const msg = {
@@ -203,12 +229,12 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
     if (msg.toId === 0) {
       io.emit("nuevoMensaje", msg); // Chat grupal
     } else {
-      // ✅ Enviar mensaje a ambos usuarios: receptor y emisor
       io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);
       io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);
     }
 
     res.json({ ok: true });
+
   } catch (err) {
     console.error("Error enviando mensaje:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -224,7 +250,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
     let rows;
 
     if (toId === 0) {
-      ({ rows } = await db.query(`
+      ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
         JOIN users u ON m."fromId" = u.id
@@ -232,7 +258,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
         ORDER BY m.fecha
       `));
     } else {
-      ({ rows } = await db.query(`
+      ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
         JOIN users u ON m.fromId = u.id
@@ -243,6 +269,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
     }
 
     res.json(rows);
+
   } catch (err) {
     console.error("Error obteniendo mensajes:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -255,12 +282,12 @@ app.get("/verify-token", auth, (req, res) => {
 });
 
 // ============================
-// 7. SOCKET.IO en tiempo real
+// 7. Socket.IO en tiempo real
 // ============================
 io.use((socket, next) => {
   let token = socket.handshake.auth.token;
   if (!token) return next(new Error("Token requerido"));
-  // No es necesario quitar "Bearer" aquí si lo envías sin él desde el cliente
+
   jwt.verify(token, SECRET, (err, user) => {
     if (err) return next(new Error("Token inválido"));
     socket.user = user;
@@ -279,4 +306,8 @@ io.on("connection", (socket) => {
 // ============================
 // 8. Iniciar servidor
 // ============================
-server.listen(3000, () => console.log("🚀 Servidor corriendo en http://localhost:3000"));
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
