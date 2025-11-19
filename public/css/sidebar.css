@@ -1,0 +1,147 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+}
+
+/* Botón hamburguesa */
+.menu-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  font-size: 22px;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 6px;
+  z-index: 1001;
+}
+
+/* Para ocultar el botón cuando se abra el menú */
+.menu-toggle.hidden {
+  display: none;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -240px; /* Oculto por defecto */
+  width: 220px;
+  height: 100%;
+  background: #2c3e50;
+  padding: 20px;
+  color: white;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.active {
+  left: 0; /* Se muestra cuando está activo */
+}
+
+.sidebar h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.sidebar a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  background: #34495e;
+}
+
+/* Contenido principal */
+.main {
+  margin-left: 20px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+  display: flex;
+  justify-content: center; /* centra horizontalmente */
+}
+
+.main.shifted {
+  margin-left: 260px; /* cuando el menú está abierto */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background: #2c3e50;
+  color: white;
+}
+
+tr:hover {
+  background: #f1f1f1;
+}
+
+/* Contenedor de la tabla */
+.table-container {
+  width: 100%;
+  max-width: 900px;   /* tamaño máximo */
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  overflow-x: auto;   /* si la pantalla es muy pequeña, agrega scroll horizontal */
+}
+
+/* Tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background: #2c3e50;
+  color: white;
+}
+
+tr:hover {
+  background: #f1f1f1;
+}
+
+#logoutBtn {
+  display: block;
+  padding: 10px;
+  margin-top: 20px;
+  background: #e74c3c;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+#logoutBtn:hover {
+  background: #c0392b;
+}

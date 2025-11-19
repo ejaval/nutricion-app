@@ -1,0 +1,83 @@
+<!-- dashboard-nutricionista.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nutricionista</title>
+  <link rel="stylesheet" href="/css/sidebar.css">
+  <link rel="stylesheet" href="/css/chat-modal.css">
+</head>
+<body>
+  <button class="menu-toggle" id="menuToggle">☰</button>
+
+  <div class="sidebar" id="sidebar">
+    <h2>Menú Nutricionista</h2>
+    <a href="crear-usuario.html">Crear Nuevo Usuario</a>
+    <a href="#" id="abrirChatGrupalBtn">Chat Grupal</a>
+    <a href="#" id="logoutBtn">Salir</a>
+  </div>
+
+  <div class="main" id="mainContent">
+    <div class="table-container">
+      <h2>Usuarios Existentes</h2>
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar usuario...">
+      <br>
+      <br>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="usuariosList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  
+<!-- Mensaje cuando no hay resultados -->
+<div id="noResults" style="display:none; text-align:center; margin-top:10px; color:red;">
+  Usuario no encontrado
+</div>
+
+  <!-- Modal Individual -->
+  <div id="chatModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Chat con Paciente</h2>
+      <input type="hidden" id="toId">
+      <div id="chatBox"></div>
+      <form id="chatForm" enctype="multipart/form-data">
+        <input type="text" id="mensaje" name="mensaje" placeholder="Escribe...">
+        <input type="file" id="archivo" name="archivo">
+        <button type="submit">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Grupal -->
+  <div id="chatGrupalModal" class="modal">
+    <div class="modal-content">
+      <span class="close-grupal">&times;</span>
+      <h2>Chat Grupal</h2>
+      <div id="chatGrupalBox"></div>
+      <form id="chatGrupalForm" enctype="multipart/form-data">
+        <input type="text" id="mensajeGrupal" name="mensajeGrupal" placeholder="Escribe...">
+        <input type="file" id="archivoGrupal" name="archivoGrupal">
+        <button type="submit">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/auth-check.js"></script>
+  <script src="/js/carga-usuarios.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    localStorage.setItem("rol", "nutricionista");
+  </script>
+  <script src="/js/chat-modal.js"></script>
+</body>
+</html>
