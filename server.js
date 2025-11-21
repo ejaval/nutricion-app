@@ -193,6 +193,55 @@ app.get("/users", auth, async (req, res) => {
   }
 });
 
+// 🔄 ENVIAR MENSAJE
+app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
+  const { toId } = req.body;
+  const mensaje = req.body.mensaje || req.body.mensajeGrupal || "";
+  const archivo = req.file ? req.file.filename : null;
+
+  if (!mensaje && !archivo) {
+    return res.status(400).json({ error: "Mensaje o archivo requerido." });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO mensajes (fromId, "toId", mensaje, archivo)
+       VALUES ($1, $2, $3, $4) RETURNING id, fecha`,
+      [req.user.id, toId || 0, mensaje, archivo]
+    );
+
+    const { rows } = await pool.query(
+      `SELECT nombre FROM users WHERE id=$1`,
+      [req.user.id]
+    );
+
+    const fromNombre = rows[0]?.nombre || "Desconocido";
+
+    const msg = {
+      id: result.rows[0].id,
+      fromId: req.user.id,
+      fromNombre,
+      toId: parseInt(toId) || 0,
+      mensaje,
+      archivo,
+      fecha: result.rows[0].fecha,
+    };
+
+    if (msg.toId === 0) {
+      io.emit("nuevoMensaje", msg); // Chat grupal
+    } else {
+      io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);
+      io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);
+    }
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("Error enviando mensaje:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // 🔄 OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
@@ -205,7 +254,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
-        JOIN users u ON m."fromid" = u.id
+        JOIN users u ON m."fromId" = u.id
         WHERE m."toId" = 0
         ORDER BY m.fecha
       `));
@@ -213,9 +262,9 @@ app.get("/chat/:toId", auth, async (req, res) => {
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
-        JOIN users u ON m."fromid" = u.id
-        WHERE (m."fromid" = $1 AND m."toId" = $2)
-           OR (m."fromid" = $2 AND m."toId" = $1)
+        JOIN users u ON m.fromId = u.id
+        WHERE (m.fromId = $1 AND m."toId" = $2)
+           OR (m.fromId = $2 AND m."toId" = $1)
         ORDER BY m.fecha
       `, [req.user.id, toId]));
     }
