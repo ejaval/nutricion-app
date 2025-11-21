@@ -8,11 +8,6 @@ const rol = localStorage.getItem("userRole");
 const nutricionistaId = localStorage.getItem("nutricionistaId");
 let usuariosMap = {};
 
-// ✅ Definir URL base dinámicamente
-const API_BASE_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000'
-  : 'https://nutricion-app-1.onrender.com/login.html';
-
 // Nuevo flag para evitar reconexión duplicada
 let socket;
 let socketInitialized = false;
@@ -49,7 +44,7 @@ async function cargarUsuarios() {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/users`, {
+    const res = await fetch("/users", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -73,7 +68,7 @@ async function cargarUsuarios() {
 }
 
 async function cargarMensajesIndividuales(destinatarioId) {
-  const res = await fetch(`${API_BASE_URL}/chat/${destinatarioId}`, {
+  const res = await fetch(`/chat/${destinatarioId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const mensajes = await res.json();
@@ -90,7 +85,7 @@ async function cargarMensajesIndividuales(destinatarioId) {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
-          ${msg.archivo ? `<br><a href="${API_BASE_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${msg.archivo ? `<br><a href="/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
@@ -99,7 +94,7 @@ async function cargarMensajesIndividuales(destinatarioId) {
 }
 
 async function cargarMensajesGrupales() {
-  const res = await fetch(`${API_BASE_URL}/chat/0`, {
+  const res = await fetch(`/chat/0`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const mensajes = await res.json();
@@ -116,7 +111,7 @@ async function cargarMensajesGrupales() {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
-          ${msg.archivo ? `<br><a href="${API_BASE_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${msg.archivo ? `<br><a href="/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
@@ -133,7 +128,7 @@ function configurarSocket() {
 
   console.log("Intentando conectar socket...");
 
-  socket = io(API_BASE_URL, { auth: { token } });
+  socket = io("http://localhost:3000", { auth: { token } });
 
   socket.on("connect", () => {
     console.log("✅ Socket conectado");
@@ -157,7 +152,7 @@ function configurarSocket() {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-          ${archivo ? `<br><a href="${API_BASE_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${archivo ? `<br><a href="/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
@@ -180,64 +175,19 @@ function configurarSocket() {
 
 async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
-  const mensaje = formData.get("mensaje") || "";
-  const archivo = formData.get("archivo");
-
-  // ✅ Validar que haya mensaje o archivo
-  if (!mensaje.trim() && !(archivo && archivo.name && archivo.size > 0)) {
-    alert("El mensaje o archivo es requerido.");
-    return;
-  }
-
-  // ✅ Mostrar mensaje temporal en pantalla antes de enviar
-  const autor = "Tú";
-  const claseMensaje = "mensaje-mio";
-  const fechaActual = new Date();
-  const fechaHora = formatearFechaHora(fechaActual);
-
-  const mensajeHTML = `
-    <div class="${claseMensaje}">
-      <div class="mensaje-texto">
-        <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-        ${archivo && archivo.name && archivo.size > 0 ? `<br><a href="#" target="_blank">📎 Archivo adjunto</a>` : ""}
-      </div>
-      <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
-    </div>`;
-
-  // Agregar mensaje al chat inmediatamente
-  if (toId == 0) {
-    const box = document.getElementById("chatGrupalBox");
-    if (box) {
-      box.innerHTML += mensajeHTML;
-      box.scrollTop = box.scrollHeight;
-    }
-  } else {
-    const box = document.getElementById("chatBox");
-    if (box) {
-      box.innerHTML += mensajeHTML;
-      box.scrollTop = box.scrollHeight;
-    }
-  }
-
-  // Enviar al servidor
   formData.append("toId", toId);
-  try {
-    const res = await fetch(`${API_BASE_URL}/chat/send`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
-    });
 
-    if (res.ok) {
-      form.reset();
-      ajustarAlturaTextarea(input);
-    } else {
-      const errorData = await res.json().catch(() => ({ error: "Error desconocido" }));
-      alert(`Error al enviar mensaje: ${errorData.error || "Desconocido"}`);
-    }
-  } catch (err) {
-    console.error("Error en la solicitud:", err);
-    alert("Error de red o servidor. Intenta nuevamente.");
+  const res = await fetch("/chat/send", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+
+  if (res.ok) {
+    form.reset();
+    ajustarAlturaTextarea(input);
+  } else {
+    alert("Error al enviar mensaje.");
   }
 }
 
