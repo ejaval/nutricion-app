@@ -247,7 +247,7 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   }
 });
 
-// 🔄 OBTENER MENSAJES
+// OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
   if (isNaN(toId)) return res.status(400).json({ error: "ID inválido" });
@@ -260,7 +260,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
-        JOIN users u ON m."fromId" = u.id
+        JOIN users u ON m.fromId = u.id
         WHERE m."toId" = 0
         ORDER BY m.fecha
       `));
