@@ -254,7 +254,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
-        JOIN users u ON m."fromId" = u.id
+        JOIN users u ON m."fromid" = u.id
         WHERE m."toId" = 0
         ORDER BY m.fecha
       `));
@@ -262,9 +262,9 @@ app.get("/chat/:toId", auth, async (req, res) => {
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
-        JOIN users u ON m.fromId = u.id
-        WHERE (m.fromId = $1 AND m."toId" = $2)
-           OR (m.fromId = $2 AND m."toId" = $1)
+        JOIN users u ON m."fromid" = u.id
+        WHERE (m."fromid" = $1 AND m."toId" = $2)
+           OR (m."fromid" = $2 AND m."toId" = $1)
         ORDER BY m.fecha
       `, [req.user.id, toId]));
     }
