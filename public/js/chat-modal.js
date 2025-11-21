@@ -199,7 +199,7 @@ async function enviarMensaje(form, input, toId = 0) {
     <div class="${claseMensaje}">
       <div class="mensaje-texto">
         <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-        ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo.name || archivo)}" target="_blank">📎 Archivo</a>` : ""}
+        ${archivo && archivo.name ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo.name)}" target="_blank">📎 Archivo</a>` : ""}
       </div>
       <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
     </div>`;
