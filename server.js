@@ -17,7 +17,12 @@ const http = require("http");
 // ============================
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: "https://nutricion-app-1.onrender.com", // ← Cambia a tu dominio real
+    methods: ["GET", "POST"]
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -309,6 +314,6 @@ io.on("connection", (socket) => {
 // ============================
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`🚀 Servidor corriendo en puerto ${port}`);
 });
