@@ -254,21 +254,26 @@ function inicializarChat() {
   const inputMensajeGrupal = document.getElementById("mensajeGrupal");
 
   const modal = document.getElementById("chatModal");
-  const closeBtn = modal.querySelector(".close");
+  const closeBtn = modal?.querySelector(".close"); // ✅ Opcional chaining
 
   const chatForm = document.getElementById("chatForm");
-  chatForm.addEventListener("submit", e => {
-    e.preventDefault();
-    const toId = document.getElementById("toId").value;
-    enviarMensaje(chatForm, inputMensaje, parseInt(toId));
-  });
+  if (chatForm) {
+    chatForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const toId = document.getElementById("toId")?.value;
+      if (toId) enviarMensaje(chatForm, inputMensaje, parseInt(toId));
+    });
+  }
 
   const chatGrupalForm = document.getElementById("chatGrupalForm");
-  chatGrupalForm.addEventListener("submit", e => {
-    e.preventDefault();
-    enviarMensaje(chatGrupalForm, inputMensajeGrupal, 0);
-  });
+  if (chatGrupalForm) {
+    chatGrupalForm.addEventListener("submit", e => {
+      e.preventDefault();
+      enviarMensaje(chatGrupalForm, inputMensajeGrupal, 0);
+    });
+  }
 
+  // Botón para abrir chat individual
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("openChatBtn")) {
       let toId = null;
@@ -279,22 +284,32 @@ function inicializarChat() {
 
       document.getElementById("toId").value = toId;
       cargarMensajesIndividuales(toId);
-      modal.style.display = "block";
+      if (modal) modal.style.display = "block";
     }
   });
 
-  closeBtn.onclick = () => (modal.style.display = "none");
+  // Botón de cerrar modal individual
+  if (closeBtn) {
+    closeBtn.onclick = () => (modal.style.display = "none");
+  }
 
   const grupalModal = document.getElementById("chatGrupalModal");
   const openGrupalBtn = document.getElementById("abrirChatGrupalBtn");
-  const closeGrupalBtn = grupalModal.querySelector(".close-grupal");
+  const closeGrupalBtn = grupalModal?.querySelector(".close-grupal"); // ✅ Opcional chaining
 
-  openGrupalBtn.onclick = (e) => {
-    e.preventDefault();
-    cargarMensajesGrupales();
-    grupalModal.style.display = "block";
-  };
-  closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
+  // Botón para abrir chat grupal
+  if (openGrupalBtn) {
+    openGrupalBtn.onclick = (e) => {
+      e.preventDefault();
+      cargarMensajesGrupales();
+      if (grupalModal) grupalModal.style.display = "block";
+    };
+  }
+
+  // Botón de cerrar modal grupal
+  if (closeGrupalBtn) {
+    closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
+  }
 
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
