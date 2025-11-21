@@ -175,14 +175,17 @@ function configurarSocket() {
 async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
   const mensaje = formData.get("mensaje") || "";
-  const archivo = formData.get("archivo");
+  const archivo = formData.get("archivo"); // 👈 Esto devuelve un File o null
 
   if (!mensaje.trim() && !archivo) {
     alert("El mensaje o archivo es requerido.");
     return;
   }
 
-  // ✅ Mostrar mensaje temporal en pantalla antes de enviar
+  // ✅ Verificar si hay archivo real (con nombre y tamaño)
+  const archivoValido = archivo && archivo.name && archivo.size > 0;
+
+  // Mostrar mensaje temporal en pantalla antes de enviar
   const autor = "Tú";
   const claseMensaje = "mensaje-mio";
   const fechaActual = new Date();
@@ -192,7 +195,7 @@ async function enviarMensaje(form, input, toId = 0) {
     <div class="${claseMensaje}">
       <div class="mensaje-texto">
         <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-        ${archivo ? `<br><a href="#" target="_blank">📎 Archivo adjunto</a>` : ""}
+        ${archivoValido ? `<br><a href="#" target="_blank">📎 Archivo adjunto</a>` : ""}
       </div>
       <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
     </div>`;
@@ -225,7 +228,6 @@ async function enviarMensaje(form, input, toId = 0) {
     ajustarAlturaTextarea(input);
   } else {
     alert("Error al enviar mensaje.");
-    // Opcional: eliminar el mensaje temporal si falló
   }
 }
 
