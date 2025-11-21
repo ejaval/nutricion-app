@@ -28,10 +28,11 @@
         <option value="paciente">Paciente</option>
         <option value="nutricionista">Nutricionista</option>
       </select>
-      <button type="submit" id="btnCrearUsuario" href="href="dashboard-nutricionista.html">Crear Usuario</button>
+      <button type="submit" id="btnCrearUsuario" href="dashboard-nutricionista.htm">Crear Usuario</button>
     </form>
   </div>
 
+  <script>
       // Crear usuario
       formUsuario.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -71,9 +72,6 @@
           alert("Error al conectarse con el servidor");
         }
       });
-
-      // Llamar al inicio
-      cargarUsuarios();
     });
   </script>
 </body>
