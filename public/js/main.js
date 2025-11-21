@@ -84,9 +84,9 @@ function renderMensajes(mensajes, chatBox) {
     if (m.archivo) {
       let tipo = m.archivo.split(".").pop().toLowerCase();
       if (["jpg", "jpeg", "png", "mp4"].includes(tipo)) {
-        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank">📎 Ver archivo</a>`;
+        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank"> Ver archivo</a>`;
       } else {
-        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank">📄 Descargar archivo</a>`;
+        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank"> Descargar archivo</a>`;
       }
     }
     html += `</p>`;
