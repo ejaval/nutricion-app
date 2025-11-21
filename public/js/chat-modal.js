@@ -1,6 +1,6 @@
 //configurado para probar en render
 // ============================
-// CHAT MODALS - Actualizado
+// CHAT MODALS - Actualizado para Render
 // ============================
 const token = localStorage.getItem("token");
 const myId = localStorage.getItem("userId");
@@ -8,9 +8,11 @@ const rol = localStorage.getItem("userRole");
 const nutricionistaId = localStorage.getItem("nutricionistaId");
 let usuariosMap = {};
 
-// Nuevo flag para evitar reconexión duplicada
 let socket;
 let socketInitialized = false;
+
+// ✅ URL DEL BACKEND EN RENDER (¡Cambia si es diferente!)
+const BACKEND_URL = "https://nutricion-app-1.onrender.com";
 
 function ajustarAlturaTextarea(textarea) {
   textarea.style.height = "auto";
@@ -37,38 +39,22 @@ function escapeHtml(unsafe) {
 }
 
 async function cargarUsuarios() {
-  // Solo cargar usuarios si el rol es nutricionista
-  if (rol !== "nutricionista") {
-    console.log("Solo el nutricionista puede cargar usuarios.");
-    return;
-  }
+  if (rol !== "nutricionista") return;
 
   try {
-    const res = await fetch("/users", {
+    const res = await fetch(`${BACKEND_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-
-    if (!res.ok) {
-      console.error("Error al cargar usuarios:", res.status, res.statusText);
-      return;
-    }
-
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const usuarios = await res.json();
-
-    if (!Array.isArray(usuarios)) {
-      console.error("La respuesta de /users no es un array:", usuarios);
-      return;
-    }
-
-    usuariosMap = {};
-    usuarios.forEach(u => usuariosMap[u.id] = u.nombre);
+    usuariosMap = Object.fromEntries(usuarios.map(u => [u.id, u.nombre]));
   } catch (error) {
     console.error("Error cargando usuarios:", error);
   }
 }
 
 async function cargarMensajesIndividuales(destinatarioId) {
-  const res = await fetch(`/chat/${destinatarioId}`, {
+  const res = await fetch(`${BACKEND_URL}/chat/${destinatarioId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const mensajes = await res.json();
@@ -85,7 +71,7 @@ async function cargarMensajesIndividuales(destinatarioId) {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
-          ${msg.archivo ? `<br><a href="/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${msg.archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
@@ -94,7 +80,7 @@ async function cargarMensajesIndividuales(destinatarioId) {
 }
 
 async function cargarMensajesGrupales() {
-  const res = await fetch(`/chat/0`, {
+  const res = await fetch(`${BACKEND_URL}/chat/0`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const mensajes = await res.json();
@@ -111,7 +97,7 @@ async function cargarMensajesGrupales() {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
-          ${msg.archivo ? `<br><a href="/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${msg.archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
@@ -119,25 +105,37 @@ async function cargarMensajesGrupales() {
   box.scrollTop = box.scrollHeight;
 }
 
-// ✅ SOCKET.IO ACTUALIZADO
 function configurarSocket() {
   if (socketInitialized) {
     console.log("Socket ya inicializado, evitando reconexión duplicada.");
     return;
   }
 
-  console.log("Intentando conectar socket...");
+  console.log("Intentando conectar socket a:", BACKEND_URL);
 
-  socket = io("http://localhost:3000", { auth: { token } });
+  socket = io(BACKEND_URL, {
+    auth: { token },
+    transports: ["websocket", "polling"], // Asegura compatibilidad
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+  });
 
   socket.on("connect", () => {
-    console.log("✅ Socket conectado");
+    console.log("✅ Socket conectado exitosamente");
     socketInitialized = true;
   });
 
   socket.on("disconnect", () => {
     console.log("❌ Socket desconectado");
     socketInitialized = false;
+  });
+
+  socket.on("connect_error", (err) => {
+    console.error("❌ Error al conectar Socket.IO:", err.message);
+    if (err.message === "timeout") {
+      console.warn("⚠️ Posible problema de CORS o servidor inaccesible.");
+    }
   });
 
   socket.off("nuevoMensaje");
@@ -152,18 +150,18 @@ function configurarSocket() {
       <div class="${claseMensaje}">
         <div class="mensaje-texto">
           <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-          ${archivo ? `<br><a href="/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
+          ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
         </div>
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
 
-    if (toId == 0) {
+    if (toId === 0) {
       const box = document.getElementById("chatGrupalBox");
       if (box) {
         box.innerHTML += mensajeHTML;
         box.scrollTop = box.scrollHeight;
       }
-    } else if (toId == myId || fromId == myId) {
+    } else if (toId === myId || fromId === myId) {
       const box = document.getElementById("chatBox");
       if (box) {
         box.innerHTML += mensajeHTML;
@@ -177,7 +175,7 @@ async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
   formData.append("toId", toId);
 
-  const res = await fetch("/chat/send", {
+  const res = await fetch(`${BACKEND_URL}/chat/send`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData
@@ -187,7 +185,7 @@ async function enviarMensaje(form, input, toId = 0) {
     form.reset();
     ajustarAlturaTextarea(input);
   } else {
-    alert("Error al enviar mensaje.");
+    alert("Error al enviar mensaje: " + res.statusText);
   }
 }
 
@@ -238,14 +236,13 @@ function inicializarChat() {
   };
   closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
 
-  if(closeBtn){
-    closeBtn.addEventListener("click", ()=>{
-      modal.style.display="none";
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
     });
   }
 }
 
-// ✅ Desconectar socket al salir de la página
 window.addEventListener("beforeunload", () => {
   if (socket) socket.disconnect();
 });
