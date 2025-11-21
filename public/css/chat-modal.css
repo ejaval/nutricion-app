@@ -54,6 +54,18 @@
   border-radius: 8px;
 }
 
+.close, .close-grupal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover, .close-grupal:hover {
+  color: black;
+}
+
 #chatBox, #chatGrupalBox {
   display: flex;
   flex-direction: column;
