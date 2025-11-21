@@ -11,8 +11,8 @@ let usuariosMap = {};
 let socket;
 let socketInitialized = false;
 
-// URL DEL BACKEND EN RENDER (¡Cambia si es diferente!)
-const BACKEND_URL = "https://nutricion-app-1.onrender.com";
+//URL DEL BACKEND EN RENDER
+const BACKEND_URL = "https://nutricion-app-1.onrender.com/login.html";
 
 function ajustarAlturaTextarea(textarea) {
   textarea.style.height = "auto";
@@ -30,7 +30,7 @@ function formatearFechaHora(timestamp) {
 }
 
 function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return ""; // Si no es string, devolver vacío
+  if (typeof unsafe !== "string") return ""; // ✅ Asegurar que sea string
   return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "<")
@@ -84,7 +84,21 @@ async function cargarMensajesGrupales() {
   const res = await fetch(`${BACKEND_URL}/chat/0`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+
+  if (!res.ok) {
+    console.error("Error al cargar mensajes grupales:", res.status, await res.text());
+    alert("Error al cargar mensajes grupales.");
+    return;
+  }
+
   const mensajes = await res.json();
+
+  if (!Array.isArray(mensajes)) {
+    console.error("La respuesta no es un array:", mensajes);
+    alert("Formato de mensajes inválido.");
+    return;
+  }
+
   const box = document.getElementById("chatGrupalBox");
   box.innerHTML = "";
 
@@ -123,7 +137,7 @@ function configurarSocket() {
   });
 
   socket.on("connect", () => {
-    console.log("Socket conectado exitosamente");
+    console.log("✅ Socket conectado exitosamente");
     socketInitialized = true;
   });
 
@@ -133,9 +147,9 @@ function configurarSocket() {
   });
 
   socket.on("connect_error", (err) => {
-    console.error("Error al conectar Socket.IO:", err.message);
+    console.error("❌ Error al conectar Socket.IO:", err.message);
     if (err.message === "timeout") {
-      console.warn("Posible problema de CORS o servidor inaccesible.");
+      console.warn("⚠️ Posible problema de CORS o servidor inaccesible.");
     }
   });
 
@@ -143,22 +157,23 @@ function configurarSocket() {
   socket.on("nuevoMensaje", (msg) => {
     const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
     const esMio = fromId == myId;
-    
-    // Evitar duplicado si ya lo renderizamos localmente
+
+    // ✅ Evitar duplicado si ya lo renderizamos localmente
     if (esMio) return;
-    const autor = "Tú";
-    const claseMensaje = "mensaje-mio";
-    const ahora = new Date();
-    const fechaHora = formatearFechaHora(ahora);
-    
-const mensajeHTML = `
-  <div class="${claseMensaje}">
-    <div class="mensaje-texto">
-      <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-      ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
-    </div>
-    <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
-  </div>`;
+
+    // ✅ El receptor debe ver el mensaje como del otro
+    const autor = fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`;
+    const claseMensaje = "mensaje-otro"; // Siempre es del otro al recibir
+    const fechaHora = fecha ? formatearFechaHora(fecha) : "";
+
+    const mensajeHTML = `
+      <div class="${claseMensaje}">
+        <div class="mensaje-texto">
+          <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
+          ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
+        </div>
+        <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+      </div>`;
 
     if (toId == 0) {
       const box = document.getElementById("chatGrupalBox");
@@ -176,7 +191,7 @@ const mensajeHTML = `
   });
 }
 
-// FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
+// ✅ FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
 async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
   formData.append("toId", toId);
@@ -189,7 +204,7 @@ async function enviarMensaje(form, input, toId = 0) {
     return;
   }
 
-  // Agregar mensaje localmente en la pantalla del emisor
+  // ✅ Agregar mensaje localmente en la pantalla del emisor
   const autor = "Tú";
   const claseMensaje = "mensaje-mio";
   const ahora = new Date();
