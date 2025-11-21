@@ -247,7 +247,7 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   }
 });
 
-// OBTENER MENSAJES
+// 🔄 OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
   if (isNaN(toId)) return res.status(400).json({ error: "ID inválido" });
@@ -256,6 +256,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
     let rows;
 
     if (toId === 0) {
+      // Chat grupal
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
@@ -264,6 +265,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
         ORDER BY m.fecha
       `));
     } else {
+      // Chat individual
       ({ rows } = await pool.query(`
         SELECT m.*, u.nombre AS "fromNombre"
         FROM mensajes m
