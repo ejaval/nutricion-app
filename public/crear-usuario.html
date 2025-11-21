@@ -31,83 +31,98 @@
       <button type="submit" id="btnCrearUsuario">Crear Usuario</button>
     </form>
 
+    <!-- ✅ Agregamos aquí la lista de usuarios -->
+    <div id="usuariosList"></div>
+
     <a href="dashboard-nutricionista.html">Volver al Dashboard</a>
   </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const formUsuario = document.getElementById("formUsuario");
-  const usuariosList = document.getElementById("usuariosList");
+  <!-- ✅ Scripts necesarios -->
+  <script src="/js/auth-check.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const formUsuario = document.getElementById("formUsuario");
+      const usuariosList = document.getElementById("usuariosList");
 
-  // Función para cargar usuarios existentes
-  async function cargarUsuarios(){
-    const token = localStorage.getItem("token");
-    if (!token) return;
+      // Función para cargar usuarios existentes
+      async function cargarUsuarios(){
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
-    const res = await fetch("/users", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+        try {
+          const res = await fetch("/users", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-    if (!res.ok) return;
+          if (!res.ok) {
+            console.error("Error al cargar usuarios:", res.status);
+            return;
+          }
 
-    const usuarios = await res.json();
-    usuariosList.innerHTML = "";
+          const usuarios = await res.json();
 
-    usuarios.forEach(u => {
-      usuariosList.innerHTML += `
-        <div style="background:#fff; padding:10px; margin:5px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
-          <b>${u.nombre}</b> (${u.role})
-        </div>
-      `;
-    });
-  }
+          if (!Array.isArray(usuarios)) {
+            console.error("La respuesta de /users no es un array:", usuarios);
+            return;
+          }
 
-  // Crear usuario
-  formUsuario.addEventListener("submit", async (e) => {
-    e.preventDefault();
+          usuariosList.innerHTML = "";
 
-    const nombre = document.getElementById("nombreUsuario").value.trim();
-    const password = document.getElementById("password").value;
-    const role = document.getElementById("role").value;
-
-    const token = localStorage.getItem("token");
-    if(!token){
-      alert("Token no disponible. Debes hacer login primero.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/create-user", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ nombre, password, role })
-      });
-
-      const data = await res.json();
-
-      if(res.ok){
-        alert("Usuario creado correctamente!");
-        formUsuario.reset();
-        cargarUsuarios();
-      } else {
-        alert("Error: " + (data.error || "No se pudo crear el usuario"));
+          usuarios.forEach(u => {
+            usuariosList.innerHTML += `
+              <div style="background:#fff; padding:10px; margin:5px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
+                <b>${u.nombre}</b> (${u.role})
+              </div>
+            `;
+          });
+        } catch (err) {
+          console.error("Error cargando usuarios:", err);
+        }
       }
 
-    } catch (err) {
-      console.error(err);
-      alert("Error al conectarse con el servidor");
-    }
-  });
+      // Crear usuario
+      formUsuario.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-  // Llamar al inicio
-  cargarUsuarios();
-});
-</script>
-  <script src="/js/auth-check.js"></script>
-  <script src="/js/carga-usuarios.js"></script>
-  <script src="/js/validacion.js"></script>
+        const nombre = document.getElementById("nombreUsuario").value.trim();
+        const password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        const token = localStorage.getItem("token");
+        if(!token){
+          alert("Token no disponible. Debes hacer login primero.");
+          return;
+        }
+
+        try {
+          const res = await fetch("/create-user", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ nombre, password, role })
+          });
+
+          const data = await res.json();
+
+          if(res.ok){
+            alert("Usuario creado correctamente!");
+            formUsuario.reset();
+            cargarUsuarios(); // Recargar lista
+          } else {
+            alert("Error: " + (data.error || "No se pudo crear el usuario"));
+          }
+
+        } catch (err) {
+          console.error(err);
+          alert("Error al conectarse con el servidor");
+        }
+      });
+
+      // Llamar al inicio
+      cargarUsuarios();
+    });
+  </script>
 </body>
 </html>
