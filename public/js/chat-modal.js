@@ -30,7 +30,7 @@ function formatearFechaHora(timestamp) {
 }
 
 function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return ""; // ✅ Asegurar que sea string
+  if (typeof unsafe !== "string") return ""; // Asegurar que sea string
   return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "<")
@@ -137,19 +137,19 @@ function configurarSocket() {
   });
 
   socket.on("connect", () => {
-    console.log("✅ Socket conectado exitosamente");
+    console.log("Socket conectado exitosamente");
     socketInitialized = true;
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Socket desconectado");
+    console.log("Socket desconectado");
     socketInitialized = false;
   });
 
   socket.on("connect_error", (err) => {
-    console.error("❌ Error al conectar Socket.IO:", err.message);
+    console.error("Error al conectar Socket.IO:", err.message);
     if (err.message === "timeout") {
-      console.warn("⚠️ Posible problema de CORS o servidor inaccesible.");
+      console.warn("Posible problema de CORS o servidor inaccesible.");
     }
   });
 
@@ -158,10 +158,10 @@ function configurarSocket() {
     const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
     const esMio = fromId == myId;
 
-    // ✅ Evitar duplicado si ya lo renderizamos localmente
+    // Evitar duplicado si ya lo renderizamos localmente
     if (esMio) return;
 
-    // ✅ El receptor debe ver el mensaje como del otro
+    // El receptor debe ver el mensaje como del otro
     const autor = fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`;
     const claseMensaje = "mensaje-otro"; // Siempre es del otro al recibir
     const fechaHora = fecha ? formatearFechaHora(fecha) : "";
@@ -191,7 +191,7 @@ function configurarSocket() {
   });
 }
 
-// ✅ FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
+// FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
 async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
   formData.append("toId", toId);
@@ -204,7 +204,7 @@ async function enviarMensaje(form, input, toId = 0) {
     return;
   }
 
-  // ✅ Agregar mensaje localmente en la pantalla del emisor
+  // Agregar mensaje localmente en la pantalla del emisor
   const autor = "Tú";
   const claseMensaje = "mensaje-mio";
   const ahora = new Date();
@@ -294,7 +294,7 @@ function inicializarChat() {
     cargarMensajesGrupales();
     grupalModal.style.display = "block";
   };
-  closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
+  closeBtn.onclick = () => (grupalModal.style.display = "none");
 
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
