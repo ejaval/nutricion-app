@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://nutricion-app-1.onrender.com/login.html", // ← Cambia a tu dominio real
+    origin: "https://nutricion-app-1.onrender.com", // ← Cambia a tu dominio real
     methods: ["GET", "POST"]
   }
 });
