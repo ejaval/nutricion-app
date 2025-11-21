@@ -294,7 +294,7 @@ function inicializarChat() {
     cargarMensajesGrupales();
     grupalModal.style.display = "block";
   };
-  closeBtn.onclick = () => (grupalModal.style.display = "none");
+  closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
 
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
