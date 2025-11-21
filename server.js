@@ -193,64 +193,6 @@ app.get("/users", auth, async (req, res) => {
   }
 });
 
-async function enviarMensaje(form, input, toId = 0) {
-  const formData = new FormData(form);
-  const mensaje = formData.get("mensaje") || "";
-  const archivo = formData.get("archivo");
-
-  // ✅ Validar que haya mensaje o archivo
-  if (!mensaje.trim() && !(archivo && archivo.name && archivo.size > 0)) {
-    alert("El mensaje o archivo es requerido.");
-    return;
-  }
-
-  // ✅ Mostrar mensaje temporal en pantalla antes de enviar
-  const autor = "Tú";
-  const claseMensaje = "mensaje-mio";
-  const fechaActual = new Date();
-  const fechaHora = formatearFechaHora(fechaActual);
-
-  const mensajeHTML = `
-    <div class="${claseMensaje}">
-      <div class="mensaje-texto">
-        <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-        ${archivo && archivo.name && archivo.size > 0 ? `<br><a href="#" target="_blank">📎 Archivo adjunto</a>` : ""}
-      </div>
-      <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
-    </div>`;
-
-  // Agregar mensaje al chat inmediatamente
-  if (toId == 0) {
-    const box = document.getElementById("chatGrupalBox");
-    if (box) {
-      box.innerHTML += mensajeHTML;
-      box.scrollTop = box.scrollHeight;
-    }
-  } else {
-    const box = document.getElementById("chatBox");
-    if (box) {
-      box.innerHTML += mensajeHTML;
-      box.scrollTop = box.scrollHeight;
-    }
-  }
-
-  // Enviar al servidor
-  formData.append("toId", toId);
-  const res = await fetch("/chat/send", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData
-  });
-
-  if (res.ok) {
-    form.reset();
-    ajustarAlturaTextarea(input);
-  } else {
-    alert("Error al enviar mensaje.");
-    // Opcional: eliminar el mensaje temporal si falló
-  }
-}
-
 // 🔄 OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
