@@ -30,6 +30,7 @@ function formatearFechaHora(timestamp) {
 }
 
 function escapeHtml(unsafe) {
+  if (typeof unsafe !== "string") return ""; // Si no es string, devolver vacío
   return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "<")
@@ -142,22 +143,22 @@ function configurarSocket() {
   socket.on("nuevoMensaje", (msg) => {
     const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
     const esMio = fromId == myId;
-
+    
     // Evitar duplicado si ya lo renderizamos localmente
     if (esMio) return;
-
-    const autor = fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`;
-    const claseMensaje = "mensaje-otro";
-    const fechaHora = fecha ? formatearFechaHora(fecha) : "";
-
-    const mensajeHTML = `
-      <div class="${claseMensaje}">
-        <div class="mensaje-texto">
-          <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
-          ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
-        </div>
-        <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
-      </div>`;
+    const autor = "Tú";
+    const claseMensaje = "mensaje-mio";
+    const ahora = new Date();
+    const fechaHora = formatearFechaHora(ahora);
+    
+const mensajeHTML = `
+  <div class="${claseMensaje}">
+    <div class="mensaje-texto">
+      <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
+      ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
+    </div>
+    <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+  </div>`;
 
     if (toId == 0) {
       const box = document.getElementById("chatGrupalBox");
