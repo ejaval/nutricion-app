@@ -11,7 +11,7 @@ let usuariosMap = {};
 // ✅ Definir URL base dinámicamente
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000'
-  : 'https://nutricion-app-1.onrender.com';
+  : 'https://nutricion-app-1.onrender.com/login.html';
 
 // Nuevo flag para evitar reconexión duplicada
 let socket;
