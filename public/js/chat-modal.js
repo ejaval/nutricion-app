@@ -11,7 +11,7 @@ let usuariosMap = {};
 let socket;
 let socketInitialized = false;
 
-// ✅ URL DEL BACKEND EN RENDER (¡Cambia si es diferente!)
+// URL DEL BACKEND EN RENDER (¡Cambia si es diferente!)
 const BACKEND_URL = "https://nutricion-app-1.onrender.com";
 
 function ajustarAlturaTextarea(textarea) {
@@ -122,7 +122,7 @@ function configurarSocket() {
   });
 
   socket.on("connect", () => {
-    console.log("✅ Socket conectado exitosamente");
+    console.log("Socket conectado exitosamente");
     socketInitialized = true;
   });
 
@@ -132,9 +132,9 @@ function configurarSocket() {
   });
 
   socket.on("connect_error", (err) => {
-    console.error("❌ Error al conectar Socket.IO:", err.message);
+    console.error("Error al conectar Socket.IO:", err.message);
     if (err.message === "timeout") {
-      console.warn("⚠️ Posible problema de CORS o servidor inaccesible.");
+      console.warn("Posible problema de CORS o servidor inaccesible.");
     }
   });
 
@@ -142,8 +142,12 @@ function configurarSocket() {
   socket.on("nuevoMensaje", (msg) => {
     const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
     const esMio = fromId == myId;
-    const autor = esMio ? "Tú" : (fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`);
-    const claseMensaje = esMio ? "mensaje-mio" : "mensaje-otro";
+
+    // Evitar duplicado si ya lo renderizamos localmente
+    if (esMio) return;
+
+    const autor = fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`;
+    const claseMensaje = "mensaje-otro";
     const fechaHora = fecha ? formatearFechaHora(fecha) : "";
 
     const mensajeHTML = `
@@ -155,13 +159,13 @@ function configurarSocket() {
         <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
       </div>`;
 
-    if (toId === 0) {
+    if (toId == 0) {
       const box = document.getElementById("chatGrupalBox");
       if (box) {
         box.innerHTML += mensajeHTML;
         box.scrollTop = box.scrollHeight;
       }
-    } else if (toId === myId || fromId === myId) {
+    } else if (toId == myId || fromId == myId) {
       const box = document.getElementById("chatBox");
       if (box) {
         box.innerHTML += mensajeHTML;
@@ -171,21 +175,61 @@ function configurarSocket() {
   });
 }
 
+// FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
 async function enviarMensaje(form, input, toId = 0) {
   const formData = new FormData(form);
   formData.append("toId", toId);
 
+  const mensaje = formData.get("mensaje") || formData.get("mensajeGrupal") || "";
+  const archivo = formData.get("archivo");
+
+  if (!mensaje && !archivo) {
+    alert("El mensaje o archivo es requerido.");
+    return;
+  }
+
+  // Agregar mensaje localmente en la pantalla del emisor
+  const autor = "Tú";
+  const claseMensaje = "mensaje-mio";
+  const ahora = new Date();
+  const fechaHora = formatearFechaHora(ahora);
+
+  const mensajeHTML = `
+    <div class="${claseMensaje}">
+      <div class="mensaje-texto">
+        <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
+        ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo.name || archivo)}" target="_blank">📎 Archivo</a>` : ""}
+      </div>
+      <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+    </div>`;
+
+  if (toId === 0) {
+    const box = document.getElementById("chatGrupalBox");
+    if (box) {
+      box.innerHTML += mensajeHTML;
+      box.scrollTop = box.scrollHeight;
+    }
+  } else {
+    const box = document.getElementById("chatBox");
+    if (box) {
+      box.innerHTML += mensajeHTML;
+      box.scrollTop = box.scrollHeight;
+    }
+  }
+
+  // Enviar al servidor
   const res = await fetch(`${BACKEND_URL}/chat/send`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData
   });
 
-  if (res.ok) {
+  if (!res.ok) {
+    alert("Error al enviar mensaje: " + res.statusText);
+    // Opcional: eliminar el mensaje local si falló
+  } else {
     form.reset();
     ajustarAlturaTextarea(input);
-  } else {
-    alert("Error al enviar mensaje: " + res.statusText);
   }
 }
 
