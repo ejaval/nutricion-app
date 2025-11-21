@@ -193,54 +193,63 @@ app.get("/users", auth, async (req, res) => {
   }
 });
 
-// 🔄 ENVIAR MENSAJE
-app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
-  const { toId } = req.body;
-  const mensaje = req.body.mensaje || req.body.mensajeGrupal || "";
-  const archivo = req.file ? req.file.filename : null;
+async function enviarMensaje(form, input, toId = 0) {
+  const formData = new FormData(form);
+  const mensaje = formData.get("mensaje") || "";
+  const archivo = formData.get("archivo");
 
-  if (!mensaje && !archivo) {
-    return res.status(400).json({ error: "Mensaje o archivo requerido." });
+  // ✅ Validar que haya mensaje o archivo
+  if (!mensaje.trim() && !(archivo && archivo.name && archivo.size > 0)) {
+    alert("El mensaje o archivo es requerido.");
+    return;
   }
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO mensajes (fromId, "toId", mensaje, archivo)
-       VALUES ($1, $2, $3, $4) RETURNING id, fecha`,
-      [req.user.id, toId || 0, mensaje, archivo]
-    );
+  // ✅ Mostrar mensaje temporal en pantalla antes de enviar
+  const autor = "Tú";
+  const claseMensaje = "mensaje-mio";
+  const fechaActual = new Date();
+  const fechaHora = formatearFechaHora(fechaActual);
 
-    const { rows } = await pool.query(
-      `SELECT nombre FROM users WHERE id=$1`,
-      [req.user.id]
-    );
+  const mensajeHTML = `
+    <div class="${claseMensaje}">
+      <div class="mensaje-texto">
+        <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
+        ${archivo && archivo.name && archivo.size > 0 ? `<br><a href="#" target="_blank">📎 Archivo adjunto</a>` : ""}
+      </div>
+      <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+    </div>`;
 
-    const fromNombre = rows[0]?.nombre || "Desconocido";
-
-    const msg = {
-      id: result.rows[0].id,
-      fromId: req.user.id,
-      fromNombre,
-      toId: parseInt(toId) || 0,
-      mensaje,
-      archivo,
-      fecha: result.rows[0].fecha,
-    };
-
-    if (msg.toId === 0) {
-      io.emit("nuevoMensaje", msg); // Chat grupal
-    } else {
-      io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);
-      io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);
+  // Agregar mensaje al chat inmediatamente
+  if (toId == 0) {
+    const box = document.getElementById("chatGrupalBox");
+    if (box) {
+      box.innerHTML += mensajeHTML;
+      box.scrollTop = box.scrollHeight;
     }
-
-    res.json({ ok: true });
-
-  } catch (err) {
-    console.error("Error enviando mensaje:", err);
-    res.status(500).json({ error: "Error interno del servidor" });
+  } else {
+    const box = document.getElementById("chatBox");
+    if (box) {
+      box.innerHTML += mensajeHTML;
+      box.scrollTop = box.scrollHeight;
+    }
   }
-});
+
+  // Enviar al servidor
+  formData.append("toId", toId);
+  const res = await fetch("/chat/send", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+
+  if (res.ok) {
+    form.reset();
+    ajustarAlturaTextarea(input);
+  } else {
+    alert("Error al enviar mensaje.");
+    // Opcional: eliminar el mensaje temporal si falló
+  }
+}
 
 // 🔄 OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
