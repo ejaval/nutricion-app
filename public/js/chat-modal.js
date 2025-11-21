@@ -12,7 +12,7 @@ let socket;
 let socketInitialized = false;
 
 //URL DEL BACKEND EN RENDER
-const BACKEND_URL = "https://nutricion-app-1.onrender.com/login.html";
+const BACKEND_URL = "https://nutricion-app-1.onrender.com";
 
 function ajustarAlturaTextarea(textarea) {
   textarea.style.height = "auto";
