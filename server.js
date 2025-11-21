@@ -71,7 +71,7 @@ const pool = new Pool({
       `INSERT INTO users (nombre, password, role) VALUES ($1, $2, $3)`,
       ["katya cruz", hash, "nutricionista"]
     );
-    console.log("✅ Usuario inicial creado: katya cruz / 123456");
+    console.log("Usuario inicial creado: katya cruz / 123456");
   }
 })();
 
@@ -117,7 +117,7 @@ const upload = multer({
 // 6. Rutas API
 // ============================
 
-// 🔄 LOGIN
+// LOGIN
 app.post("/login", async (req, res) => {
   const { nombre, password } = req.body;
   if (!nombre || !password) {
@@ -150,7 +150,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// 🔄 CREAR USUARIO
+//CREAR USUARIO
 app.post("/create-user", auth, async (req, res) => {
   if (req.user.role !== "nutricionista")
     return res.status(403).json({ error: "Solo el nutricionista puede crear usuarios" });
@@ -181,7 +181,7 @@ app.post("/create-user", auth, async (req, res) => {
   }
 });
 
-// 🔄 LISTAR USUARIOS
+// LISTAR USUARIOS
 app.get("/users", auth, async (req, res) => {
   if (req.user.role !== "nutricionista")
     return res.status(403).json({ error: "Acceso denegado" });
@@ -198,7 +198,7 @@ app.get("/users", auth, async (req, res) => {
   }
 });
 
-// 🔄 ENVIAR MENSAJE
+// ENVIAR MENSAJE
 app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   const { toId } = req.body;
   const mensaje = req.body.mensaje || req.body.mensajeGrupal || "";
@@ -247,7 +247,7 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   }
 });
 
-// 🔄 OBTENER MENSAJES
+// OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
   if (isNaN(toId)) return res.status(400).json({ error: "ID inválido" });
@@ -282,7 +282,7 @@ app.get("/chat/:toId", auth, async (req, res) => {
   }
 });
 
-// 🔄 VERIFICAR TOKEN
+// VERIFICAR TOKEN
 app.get("/verify-token", auth, (req, res) => {
   res.json({ ok: true, id: req.user.id, role: req.user.role });
 });
@@ -303,9 +303,9 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log(`🟢 Usuario conectado: ID=${socket.user.id}`);
+  console.log(`Usuario conectado: ID=${socket.user.id}`);
   socket.on("disconnect", () => {
-    console.log(`🔴 Usuario desconectado: ID=${socket.user.id}`);
+    console.log(`Usuario desconectado: ID=${socket.user.id}`);
   });
 });
 
@@ -315,5 +315,5 @@ io.on("connection", (socket) => {
 const port = process.env.PORT || 3000;
 
 server.listen(port, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${port}`);
+  console.log(`Servidor corriendo en puerto ${port}`);
 });
