@@ -231,12 +231,12 @@ app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
       archivo,
       fecha: result.rows[0].fecha,
     };
-
+    
     if (msg.toId === 0) {
-      io.emit("nuevoMensaje", msg); // Chat grupal
+      io.emit("nuevoMensaje", msg); // Chat grupal: todos los conectados
     } else {
-      io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);
-      io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);
+      io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);    // Al receptor
+      io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);  // Al emisor también
     }
 
     res.json({ ok: true });
