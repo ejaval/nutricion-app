@@ -3,20 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <title>Crear Nuevo Usuario</title>
-  <link rel="stylesheet" href="/css/sidebar.css">
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/auth-check.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
 </head>
 <body>
-  <button class="menu-toggle" id="menuToggle">☰</button>
-
-  <div class="sidebar" id="sidebar">
-    <h2>Menú Nutricionista</h2>
-    <a href="crear-usuario.html">Crear Nuevo Usuario</a>
-    <a href="#" id="abrirChatGrupalBtn">Chat Grupal</a>
-    <a href="#" id="logoutBtn">Salir</a>
-  </div>
-
   <div class="container">
     <h2>Crear Nuevo Usuario</h2>
 
@@ -28,50 +62,48 @@
         <option value="paciente">Paciente</option>
         <option value="nutricionista">Nutricionista</option>
       </select>
-      <button type="submit" id="btnCrearUsuario" href="dashboard-nutricionista.htm">Crear Usuario</button>
+      <button type="submit">Crear Usuario</button>
     </form>
   </div>
 
   <script>
-      // Crear usuario
-      formUsuario.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    document.getElementById("formUsuario").addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-        const nombre = document.getElementById("nombreUsuario").value.trim();
-        const password = document.getElementById("password").value;
-        const role = document.getElementById("role").value;
+      const nombre = document.getElementById("nombreUsuario").value.trim();
+      const password = document.getElementById("password").value;
+      const role = document.getElementById("role").value;
 
-        const token = localStorage.getItem("token");
-        if(!token){
-          alert("Token no disponible. Debes hacer login primero.");
-          return;
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Token no disponible. Debes hacer login primero.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/create-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ nombre, password, role })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Usuario creado correctamente!");
+          // Redirigir a la pantalla principal después de crear el usuario
+          window.location.href = "dashboard-nutricionista.htm";
+        } else {
+          alert("Error: " + (data.error || "No se pudo crear el usuario"));
         }
 
-        try {
-          const res = await fetch("/create-user", {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({ nombre, password, role })
-          });
-
-          const data = await res.json();
-
-          if(res.ok){
-            alert("Usuario creado correctamente!");
-            formUsuario.reset();
-            cargarUsuarios(); // Recargar lista
-          } else {
-            alert("Error: " + (data.error || "No se pudo crear el usuario"));
-          }
-
-        } catch (err) {
-          console.error(err);
-          alert("Error al conectarse con el servidor");
-        }
-      });
+      } catch (err) {
+        console.error(err);
+        alert("Error al conectarse con el servidor");
+      }
     });
   </script>
 </body>
