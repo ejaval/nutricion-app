@@ -28,57 +28,9 @@
         <option value="paciente">Paciente</option>
         <option value="nutricionista">Nutricionista</option>
       </select>
-      <button type="submit" id="btnCrearUsuario">Crear Usuario</button>
+      <button type="submit" id="btnCrearUsuario" href="href="dashboard-nutricionista.html">Crear Usuario</button>
     </form>
-
-    <!-- ✅ Agregamos aquí la lista de usuarios -->
-    <div id="usuariosList"></div>
-
-    <a href="dashboard-nutricionista.html">Volver al Dashboard</a>
   </div>
-
-  <!-- ✅ Scripts necesarios -->
-  <script src="/js/auth-check.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const formUsuario = document.getElementById("formUsuario");
-      const usuariosList = document.getElementById("usuariosList");
-
-      // Función para cargar usuarios existentes
-      async function cargarUsuarios(){
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        try {
-          const res = await fetch("/users", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-
-          if (!res.ok) {
-            console.error("Error al cargar usuarios:", res.status);
-            return;
-          }
-
-          const usuarios = await res.json();
-
-          if (!Array.isArray(usuarios)) {
-            console.error("La respuesta de /users no es un array:", usuarios);
-            return;
-          }
-
-          usuariosList.innerHTML = "";
-
-          usuarios.forEach(u => {
-            usuariosList.innerHTML += `
-              <div style="background:#fff; padding:10px; margin:5px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
-                <b>${u.nombre}</b> (${u.role})
-              </div>
-            `;
-          });
-        } catch (err) {
-          console.error("Error cargando usuarios:", err);
-        }
-      }
 
       // Crear usuario
       formUsuario.addEventListener("submit", async (e) => {
