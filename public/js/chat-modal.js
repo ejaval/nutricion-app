@@ -315,6 +315,7 @@ function inicializarChat() {
     }
   });
 }
+}
 
 window.addEventListener("beforeunload", () => {
   if (socket) socket.disconnect();
