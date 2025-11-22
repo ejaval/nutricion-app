@@ -31,11 +31,12 @@ body {
   height: 100vh;
   background: #2c3e50;
   color: white;
-  padding-top: 20px;
+  padding-top: 60px; /* Espacio para el header si lo tienes */
   padding-left: 20px;
   padding-right: 20px;
   transition: left 0.3s ease;
   z-index: 1000;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
 }
 
 .sidebar.open {
@@ -45,15 +46,16 @@ body {
 .sidebar h2 {
   font-size: 18px;
   margin-bottom: 20px;
+  padding-left: 10px;
 }
 
 .sidebar a {
   display: block;
   color: white;
   text-decoration: none;
-  padding: 10px;
+  padding: 10px 15px;
   border-radius: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   transition: 0.3s;
 }
 
@@ -63,7 +65,7 @@ body {
 
 #logoutBtn {
   display: block;
-  padding: 10px;
+  padding: 10px 15px;
   margin-top: 20px;
   background: #e74c3c;
   color: white;
