@@ -254,8 +254,31 @@ function inicializarChat() {
   const inputMensajeGrupal = document.getElementById("mensajeGrupal");
 
   const modal = document.getElementById("chatModal");
-  const closeBtn = modal?.querySelector(".close"); // ✅ Opcional chaining
+  const grupalModal = document.getElementById("chatGrupalModal");
 
+  // === Cerrar modales al hacer clic en la "X" ===
+  const closeBtn = modal?.querySelector(".close");
+  const closeGrupalBtn = grupalModal?.querySelector(".close-grupal");
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+  }
+
+  if (closeGrupalBtn) {
+    closeGrupalBtn.addEventListener("click", () => {
+      grupalModal.style.display = "none";
+    });
+  }
+
+  // === Cerrar modal al hacer clic fuera del contenido ===
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+    if (e.target === grupalModal) grupalModal.style.display = "none";
+  });
+
+  // === Enviar mensajes ===
   const chatForm = document.getElementById("chatForm");
   if (chatForm) {
     chatForm.addEventListener("submit", e => {
@@ -273,7 +296,7 @@ function inicializarChat() {
     });
   }
 
-  // Botón para abrir chat individual
+  // === Abrir chat individual ===
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("openChatBtn")) {
       let toId = null;
@@ -284,36 +307,25 @@ function inicializarChat() {
 
       document.getElementById("toId").value = toId;
       cargarMensajesIndividuales(toId);
-      if (modal) modal.style.display = "block";
+      if (modal) {
+        modal.style.display = "block";
+        // ✅ Cerrar el grupal si está abierto
+        if (grupalModal) grupalModal.style.display = "none";
+      }
     }
   });
 
-  // Botón de cerrar modal individual
-  if (closeBtn) {
-    closeBtn.onclick = () => (modal.style.display = "none");
-  }
-
-  const grupalModal = document.getElementById("chatGrupalModal");
+  // === Abrir chat grupal ===
   const openGrupalBtn = document.getElementById("abrirChatGrupalBtn");
-  const closeGrupalBtn = grupalModal?.querySelector(".close-grupal"); // ✅ Opcional chaining
-
-  // Botón para abrir chat grupal
   if (openGrupalBtn) {
-    openGrupalBtn.onclick = (e) => {
+    openGrupalBtn.addEventListener("click", (e) => {
       e.preventDefault();
       cargarMensajesGrupales();
-      if (grupalModal) grupalModal.style.display = "block";
-    };
-  }
-
-  // Botón de cerrar modal grupal
-  if (closeGrupalBtn) {
-    closeGrupalBtn.onclick = () => (grupalModal.style.display = "none");
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      modal.style.display = "none";
+      if (grupalModal) {
+        grupalModal.style.display = "block";
+        // ✅ Cerrar el individual si está abierto
+        if (modal) modal.style.display = "none";
+      }
     });
   }
 }
