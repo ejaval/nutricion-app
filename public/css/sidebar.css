@@ -1,10 +1,12 @@
+/* === ESTILOS GENERALES === */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #f4f6f8;
+  overflow-x: hidden; /* Evita scroll horizontal */
 }
 
-/* Botón hamburguesa */
+/* === BOTÓN HAMBURGUESA === */
 .menu-toggle {
   position: fixed;
   top: 10px;
@@ -17,29 +19,27 @@ body {
   cursor: pointer;
   border-radius: 6px;
   z-index: 1001;
+  /* Siempre visible */
 }
 
-/* Para ocultar el botón cuando se abra el menú */
-.menu-toggle.hidden {
-  display: none;
-}
-
-/* Sidebar */
+/* === SIDEBAR (menú lateral) === */
 .sidebar {
   position: fixed;
   top: 0;
-  left: -240px; /* Oculto por defecto */
-  width: 220px;
-  height: 100%;
+  left: -250px; /* Oculto por defecto */
+  width: 250px;
+  height: 100vh;
   background: #2c3e50;
-  padding: 20px;
   color: white;
+  padding-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   transition: left 0.3s ease;
   z-index: 1000;
 }
 
-.sidebar.active {
-  left: 0; /* Se muestra cuando está activo */
+.sidebar.open {
+  left: 0; /* Se muestra cuando está abierto */
 }
 
 .sidebar h2 {
@@ -61,17 +61,40 @@ body {
   background: #34495e;
 }
 
-/* Contenido principal */
+#logoutBtn {
+  display: block;
+  padding: 10px;
+  margin-top: 20px;
+  background: #e74c3c;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+#logoutBtn:hover {
+  background: #c0392b;
+}
+
+/* === CONTENIDO PRINCIPAL === */
 .main {
   margin-left: 20px;
   padding: 20px;
   transition: margin-left 0.3s ease;
   display: flex;
-  justify-content: center; /* centra horizontalmente */
+  justify-content: center;
 }
 
-.main.shifted {
-  margin-left: 260px; /* cuando el menú está abierto */
+/* === TABLA Y CONTENEDOR === */
+.table-container {
+  width: 100%;
+  max-width: 900px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  overflow-x: auto;
 }
 
 table {
@@ -98,116 +121,17 @@ tr:hover {
   background: #f1f1f1;
 }
 
-/* Contenedor de la tabla */
-.table-container {
+/* === BUSCADOR === */
+.search-input {
   width: 100%;
-  max-width: 900px;   /* tamaño máximo */
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 15px;
-  overflow-x: auto;   /* si la pantalla es muy pequeña, agrega scroll horizontal */
-}
-
-/* Tabla */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-}
-
-th {
-  background: #2c3e50;
-  color: white;
-}
-
-tr:hover {
-  background: #f1f1f1;
-}
-
-#logoutBtn {
-  display: block;
   padding: 10px;
-  margin-top: 20px;
-  background: #e74c3c;
-  color: white;
-  text-align: center;
-  border-radius: 6px;
-  text-decoration: none;
-  transition: 0.3s;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 8px 0;
 }
 
-#logoutBtn:hover {
-  background: #c0392b;
-}
-
-/* Estilos generales responsivos */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  overflow-x: hidden; /* Evita scroll horizontal */
-}
-
-/* Sidebar - Móvil primero */
-.sidebar {
-  width: 250px;
-  height: 100vh;
-  background-color: #333;
-  color: white;
-  position: fixed;
-  top: 0;
-  left: -250px; /* Oculto por defecto en móviles */
-  transition: left 0.3s ease;
-  z-index: 1000;
-  padding-top: 20px;
-}
-
-.sidebar.open {
-  left: 0; /* Mostrar sidebar */
-}
-
-.menu-toggle {
-  display: block;
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 1100;
-  background: #333;
-  color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.main {
-  margin-left: 0;
-  padding: 20px;
-  transition: margin-left 0.3s ease;
-}
-
-/* En pantallas grandes (escritorio) */
-@media (min-width: 768px) {
-  .sidebar {
-    left: 0; /* Siempre visible */
-    width: 250px;
-  }
-
-  .menu-toggle {
-    display: none; /* Ocultar botón de menú */
-  }
-
-  .main {
-    margin-left: 250px; /* Ajustar contenido */
-  }
-}
-
-/* Modal de chat responsivo */
+/* === MODALES DE CHAT === */
 .modal-content {
   width: 90%;
   max-width: 500px;
@@ -215,6 +139,9 @@ body {
   border-radius: 10px;
   max-height: 80vh;
   overflow-y: auto;
+  background: white;
+  padding: 20px;
+  position: relative;
 }
 
 #chatBox, #chatGrupalBox {
@@ -224,6 +151,7 @@ body {
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 5px;
+  background: #fafafa;
 }
 
 input[type="text"], input[type="file"] {
@@ -232,6 +160,7 @@ input[type="text"], input[type="file"] {
   margin-bottom: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  box-sizing: border-box;
 }
 
 button {
@@ -244,21 +173,25 @@ button {
   cursor: pointer;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+button:hover {
+  background-color: #0056b3;
 }
 
-th, td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
+/* === RESPONSIVIDAD OPCIONAL (mejorar en móviles) === */
+@media (max-width: 600px) {
+  .main {
+    margin-left: 10px;
+    padding: 10px;
+  }
 
-.search-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  .table-container {
+    padding: 10px;
+  }
+
+  .menu-toggle {
+    top: 8px;
+    left: 8px;
+    padding: 8px 12px;
+    font-size: 20px;
+  }
 }
