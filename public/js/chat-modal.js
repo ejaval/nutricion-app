@@ -256,78 +256,64 @@ function inicializarChat() {
   const modal = document.getElementById("chatModal");
   const grupalModal = document.getElementById("chatGrupalModal");
 
-  // === Cerrar modales al hacer clic en la "X" ===
-  const closeBtn = modal?.querySelector(".close");
-  const closeGrupalBtn = grupalModal?.querySelector(".close-grupal");
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
-  }
-
-  if (closeGrupalBtn) {
-    closeGrupalBtn.addEventListener("click", () => {
-      grupalModal.style.display = "none";
-    });
-  }
-
-  // === Cerrar modal al hacer clic fuera del contenido ===
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-    if (e.target === grupalModal) grupalModal.style.display = "none";
-  });
-
-  // === Enviar mensajes ===
-  const chatForm = document.getElementById("chatForm");
-  if (chatForm) {
-    chatForm.addEventListener("submit", e => {
-      e.preventDefault();
-      const toId = document.getElementById("toId")?.value;
-      if (toId) enviarMensaje(chatForm, inputMensaje, parseInt(toId));
-    });
-  }
-
-  const chatGrupalForm = document.getElementById("chatGrupalForm");
-  if (chatGrupalForm) {
-    chatGrupalForm.addEventListener("submit", e => {
-      e.preventDefault();
-      enviarMensaje(chatGrupalForm, inputMensajeGrupal, 0);
-    });
-  }
-
-  // === Abrir chat individual ===
+  // ✅ UN ÚNICO ESCUCHADOR DELEGADO EN TODO EL DOCUMENTO
   document.addEventListener("click", (e) => {
+    // --- Cerrar modales ---
+    if (e.target.classList.contains("close") && modal) {
+      modal.style.display = "none";
+    }
+
+    if (e.target.classList.contains("close-grupal") && grupalModal) {
+      grupalModal.style.display = "none";
+    }
+
+    // Cerrar al hacer clic en el fondo del modal (opcional)
+    if (modal && e.target === modal) modal.style.display = "none";
+    if (grupalModal && e.target === grupalModal) grupalModal.style.display = "none";
+
+    // --- Abrir chat individual ---
     if (e.target.classList.contains("openChatBtn")) {
+      e.preventDefault();
       let toId = null;
       if (rol === "paciente") toId = nutricionistaId;
       else if (rol === "nutricionista") toId = e.target.getAttribute("data-id");
 
       if (!toId) return console.error("No se pudo determinar el destinatario");
 
-      document.getElementById("toId").value = toId;
+      document.getElementById("toId")?.value = toId;
       cargarMensajesIndividuales(toId);
       if (modal) {
         modal.style.display = "block";
-        // ✅ Cerrar el grupal si está abierto
         if (grupalModal) grupalModal.style.display = "none";
       }
     }
-  });
 
-  // === Abrir chat grupal ===
-  const openGrupalBtn = document.getElementById("abrirChatGrupalBtn");
-  if (openGrupalBtn) {
-    openGrupalBtn.addEventListener("click", (e) => {
+    // --- Abrir chat grupal ---
+    if (e.target.id === "abrirChatGrupalBtn") {
       e.preventDefault();
       cargarMensajesGrupales();
       if (grupalModal) {
         grupalModal.style.display = "block";
-        // ✅ Cerrar el individual si está abierto
         if (modal) modal.style.display = "none";
       }
-    });
-  }
+    }
+  });
+
+  // --- Enviar mensajes ---
+  document.getElementById("chatForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const toId = document.getElementById("toId")?.value;
+    if (toId && inputMensaje) {
+      enviarMensaje(e.target, inputMensaje, parseInt(toId));
+    }
+  });
+
+  document.getElementById("chatGrupalForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (inputMensajeGrupal) {
+      enviarMensaje(e.target, inputMensajeGrupal, 0);
+    }
+  });
 }
 
 window.addEventListener("beforeunload", () => {
