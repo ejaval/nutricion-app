@@ -145,3 +145,120 @@ tr:hover {
 #logoutBtn:hover {
   background: #c0392b;
 }
+
+/* Estilos generales responsivos */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
+/* Sidebar - Móvil primero */
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  background-color: #333;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: -250px; /* Oculto por defecto en móviles */
+  transition: left 0.3s ease;
+  z-index: 1000;
+  padding-top: 20px;
+}
+
+.sidebar.open {
+  left: 0; /* Mostrar sidebar */
+}
+
+.menu-toggle {
+  display: block;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1100;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.main {
+  margin-left: 0;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+/* En pantallas grandes (escritorio) */
+@media (min-width: 768px) {
+  .sidebar {
+    left: 0; /* Siempre visible */
+    width: 250px;
+  }
+
+  .menu-toggle {
+    display: none; /* Ocultar botón de menú */
+  }
+
+  .main {
+    margin-left: 250px; /* Ajustar contenido */
+  }
+}
+
+/* Modal de chat responsivo */
+.modal-content {
+  width: 90%;
+  max-width: 500px;
+  margin: 20px auto;
+  border-radius: 10px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+#chatBox, #chatGrupalBox {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
