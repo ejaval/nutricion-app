@@ -207,6 +207,19 @@ if (formArchivo) {
 }
 
 // ======================
+// Detectar el dispositivo de donde navega
+// ======================
+function esDispositivoMovil() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+if (esDispositivoMovil()) {
+  console.log("Usuario en móvil");
+} else {
+  console.log("Usuario en escritorio");
+}
+
+// ======================
 // Inicialización
 // ======================
 document.addEventListener("DOMContentLoaded", async () => {
