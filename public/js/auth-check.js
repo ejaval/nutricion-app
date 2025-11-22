@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // ✅ Token válido → inicializar menú desplegable
+    // Token válido → inicializar menú desplegable
     inicializarMenuDesplegable();
 
   } catch (err) {
@@ -27,29 +27,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// ✅ Menú desplegable (sidebar oculto por defecto)
+// Menú desplegable (sidebar oculto por defecto)
 function inicializarMenuDesplegable() {
-  function esDispositivoMovil() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-
   const menuToggle = document.getElementById("menuToggle");
   const sidebar = document.getElementById("sidebar");
 
   if (!menuToggle || !sidebar) return;
 
+  // Función para cerrar el menú
+  function cerrarMenu() {
+    sidebar.classList.remove("open");
+  }
+
   // Alternar visibilidad del menú
   menuToggle.addEventListener("click", (e) => {
-    e.stopPropagation(); // Evita que el clic se propague al documento
+    e.stopPropagation();
     sidebar.classList.toggle("open");
   });
 
-  // En móvil: cerrar al hacer clic fuera del menú
-  if (esDispositivoMovil()) {
-    document.addEventListener("click", (e) => {
+  // Cerrar menú al hacer clic fuera (solo si está abierto)
+  document.addEventListener("click", (e) => {
+    if (sidebar.classList.contains("open")) {
       if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-        sidebar.classList.remove("open");
+        cerrarMenu();
       }
-    });
-  }
+    }
+  });
+
+  // Opcional: cerrar con la tecla "Esc"
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && sidebar.classList.contains("open")) {
+      cerrarMenu();
+    }
+  });
 }
