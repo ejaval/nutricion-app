@@ -1,6 +1,7 @@
 // ======================
 // Variables globales
 // ======================
+let token = localStorage.getItem("token"); 
 let userId = localStorage.getItem("userId");
 let userRole = localStorage.getItem("userRole");
 
