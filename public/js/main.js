@@ -1,6 +1,8 @@
 // ======================
 // Variables globales
 // ======================
+const API = "https://nutricion-app-1.onrender.com";
+
 let token = localStorage.getItem("token"); 
 let userId = localStorage.getItem("userId");
 let userRole = localStorage.getItem("userRole");
@@ -15,7 +17,7 @@ async function checkAuth() {
   }
 
   try {
-    const res = await fetch("/verify-token", {
+    const res = await fetch(`${API}/verify-token`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -50,7 +52,7 @@ async function login() {
     return;
   }
 
-  const res = await fetch("/login", {
+  const res = await fetch(`${API}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre, password })
@@ -84,9 +86,9 @@ function renderMensajes(mensajes, chatBox) {
     if (m.archivo) {
       let tipo = m.archivo.split(".").pop().toLowerCase();
       if (["jpg", "jpeg", "png", "mp4"].includes(tipo)) {
-        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank"> Ver archivo</a>`;
+        html += `<br><a href="${API}/uploads/${escapeHtml(m.archivo)}" target="_blank"> Ver archivo</a>`;
       } else {
-        html += `<br><a href="/uploads/${escapeHtml(m.archivo)}" target="_blank"> Descargar archivo</a>`;
+        html += `<br><a href="${API}/uploads/${escapeHtml(m.archivo)}" target="_blank"> Descargar archivo</a>`;
       }
     }
     html += `</p>`;
@@ -108,9 +110,10 @@ async function cargarMensajes(toId = 0) {
   const chatBox = document.getElementById("chatBox");
   if (!chatBox) return;
 
-  const res = await fetch(`/chat/${toId}`, {
+  const res = await fetch(`${API}/chat/${toId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+
   const mensajes = await res.json();
   renderMensajes(mensajes, chatBox);
 }
@@ -124,7 +127,7 @@ const usuariosList = document.getElementById("usuariosList");
 async function cargarUsuarios() {
   if (!usuariosList) return;
 
-  const res = await fetch("/users", {
+  const res = await fetch(`${API}/users`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -158,7 +161,7 @@ if (formUsuario) {
       return;
     }
 
-    const res = await fetch("/create-user", {
+    const res = await fetch(`${API}/create-user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -180,7 +183,7 @@ if (formUsuario) {
 }
 
 // ======================
-// SUBIDA DE ARCHIVOS (FOTOS, VIDEOS, PDF/WORD)
+// SUBIDA DE ARCHIVOS
 // ======================
 const formArchivo = document.getElementById("formArchivo");
 if (formArchivo) {
@@ -188,7 +191,7 @@ if (formArchivo) {
     e.preventDefault();
     let formData = new FormData(formArchivo);
 
-    const res = await fetch("/chat/send", {
+    const res = await fetch(`${API}/chat/send`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData
@@ -207,7 +210,7 @@ if (formArchivo) {
 }
 
 // ======================
-// Detectar el dispositivo de donde navega
+// Detectar el dispositivo
 // ======================
 function esDispositivoMovil() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -235,12 +238,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      const res = await fetch("/verify-token", {
+      const res = await fetch(`${API}/verify-token`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
       if (!res.ok) throw new Error("Token inválido");
 
-      // Cargar usuarios y mensajes
       cargarUsuarios();
       const toIdInput = document.getElementById("toId");
       const toId = toIdInput ? parseInt(toIdInput.value) : 0;
@@ -253,3 +256,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 });
+
