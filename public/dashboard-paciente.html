@@ -6,6 +6,79 @@
   <title>Paciente</title>
   <link rel="stylesheet" href="/css/sidebar.css">
   <link rel="stylesheet" href="/css/chat-modal.css">
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .video-carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 10px 0;
+      scroll-behavior: smooth;
+    }
+
+    .video-carousel::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .video-carousel::-webkit-scrollbar-thumb {
+      background: #999;
+      border-radius: 3px;
+    }
+
+    .video-item {
+      min-width: 200px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .video-item video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .objetivos-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .objetivos-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .no-data {
+      color: #777;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
   <button class="menu-toggle" id="menuToggle">☰</button>
@@ -18,7 +91,21 @@
   </div>
 
   <div class="main" id="mainContent">
-    <h2>Bienvenido Paciente</h2>
+    <div class="dashboard-grid">
+      <div class="card">
+        <h3>Videos Educativos</h3>
+        <div class="video-carousel" id="videosCarousel">
+          <div class="no-data">Cargando videos...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Mis Objetivos</h3>
+        <ul class="objetivos-list" id="objetivosList">
+          <li class="no-data">Cargando objetivos...</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- Modal Individual -->
@@ -54,10 +141,64 @@
   <script src="/js/carga-usuarios.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    // Establece nutricionistaId y rol
-    localStorage.setItem("nutricionistaId", "1"); // Cambia el ID si tu backend asigna otro
+    localStorage.setItem("nutricionistaId", "1");
     localStorage.setItem("rol", "paciente");
   </script>
   <script src="/js/chat-modal.js"></script>
+
+  <script>
+    async function cargarContenidoPaciente() {
+      const pacienteId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+      if (!pacienteId || !token) return;
+
+      try {
+        const resV = await fetch(`/paciente/${pacienteId}/videos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const videos = await resV.json();
+
+        const carousel = document.getElementById('videosCarousel');
+        if (videos.length > 0) {
+          carousel.innerHTML = '';
+          videos.forEach(url => {
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+            videoItem.innerHTML = `<video controls><source src="${url}" type="video/mp4">Tu navegador no soporta el video.</video>`;
+            carousel.appendChild(videoItem);
+          });
+        } else {
+          carousel.innerHTML = '<div class="no-data">No hay videos disponibles.</div>';
+        }
+
+        const resO = await fetch(`/paciente/${pacienteId}/objetivos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const objetivos = await resO.json();
+
+        const objList = document.getElementById('objetivosList');
+        if (objetivos.length > 0) {
+          objList.innerHTML = '';
+          objetivos.forEach(obj => {
+            const li = document.createElement('li');
+            li.textContent = obj;
+            objList.appendChild(li);
+          });
+        } else {
+          objList.innerHTML = '<li class="no-data">No hay objetivos definidos.</li>';
+        }
+      } catch (err) {
+        console.error("Error cargando contenido:", err);
+        document.getElementById('videosCarousel').innerHTML = '<div class="no-data">Error al cargar videos.</div>';
+        document.getElementById('objetivosList').innerHTML = '<li class="no-data">Error al cargar objetivos.</li>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.location.pathname.includes('dashboard-paciente.html')) {
+        cargarContenidoPaciente();
+      }
+    });
+  </script>
 </body>
 </html>
