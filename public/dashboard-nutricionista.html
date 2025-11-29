@@ -136,13 +136,15 @@
     </div>
   </div>
 
+  <!-- Scripts esenciales -->
   <script src="/js/auth-check.js"></script>
   <script src="/js/carga-usuarios.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="/js/chat-modal.js"></script>
 
-  <!-- Buscador -->
+  <!-- Script de funcionalidad específica de esta página (SIN cargarUsuarios duplicado) -->
   <script>
+    // === Búsqueda de usuarios ===
     const searchInput = document.getElementById("searchInput");
     const usuariosList = document.getElementById("usuariosList");
     const noResults = document.getElementById("noResults");
@@ -172,11 +174,11 @@
       }
     }
 
-    searchInput.addEventListener("input", filtrarUsuarios);
-  </script>
+    if (searchInput) {
+      searchInput.addEventListener("input", filtrarUsuarios);
+    }
 
-  <!-- Lógica de edición de contenido -->
-  <script>
+    // === Lógica de edición de contenido ===
     let videosCache = [];
     let objetivosCache = [];
 
@@ -364,27 +366,6 @@
       alert("Cambios guardados exitosamente.");
       document.getElementById('editarContenidoModal').style.display = 'none';
     };
-
-    // Ejecutar solo si estamos en esta página
-  if (window.location.pathname.includes('dashboard-nutricionista.html')) {
-    document.addEventListener("DOMContentLoaded", async () => {
-      const token = localStorage.getItem("token");
-      const userRole = localStorage.getItem("userRole");
-
-      if (!token || userRole !== "nutricionista") {
-        console.log("Redirigiendo a login...");
-        window.location.href = "login.html";
-        return;
-      }
-
-      if (typeof cargarUsuarios === "function") {
-        console.log("Llamando a cargarUsuarios...");
-        await cargarUsuarios();
-      } else {
-        console.error("Función cargarUsuarios no definida");
-      }
-    });
-  }
   </script>
 </body>
 </html>
