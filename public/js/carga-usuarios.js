@@ -38,36 +38,44 @@ function escapeHtml(unsafe) {
 // Cargar usuarios (solo para nutricionista)
 async function cargarUsuarios() {
   const token = localStorage.getItem("token");
-  const rol = localStorage.getItem("userRole");
+  const userRole = localStorage.getItem("userRole");
 
-  if (rol !== "nutricionista") {
-    console.log("Solo el nutricionista puede cargar usuarios.");
+  console.log("[DEBUG] Token:", token ? "✓" : "✗");
+  console.log("[DEBUG] Rol:", userRole);
+
+  if (!token || userRole !== "nutricionista") {
+    console.log("[ERROR] Acceso denegado: token o rol inválido");
     return;
   }
-
-  if (!token) return;
 
   try {
     const res = await fetch("/users", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
+    console.log("[DEBUG] Status:", res.status);
+
     if (!res.ok) {
-      console.error("Error al cargar usuarios:", res.status, res.statusText);
+      const errorText = await res.text();
+      console.error("[ERROR] Respuesta del servidor:", errorText);
       return;
     }
 
     const usuarios = await res.json();
+    console.log("[DEBUG] Usuarios recibidos:", usuarios);
 
-    if (!Array.isArray(usuarios)) {
-      console.error("La respuesta de /users no es un array:", usuarios);
+    const usuariosList = document.getElementById("usuariosList");
+    if (!usuariosList) {
+      console.error("[ERROR] Elemento #usuariosList no encontrado");
       return;
     }
 
-    const usuariosList = document.getElementById("usuariosList");
-    if (!usuariosList) return;
-
     usuariosList.innerHTML = "";
+
+    if (usuarios.length === 0) {
+      usuariosList.innerHTML = "<tr><td colspan='3'>No hay usuarios registrados.</td></tr>";
+      return;
+    }
 
     usuarios.forEach(u => {
       const botonEditar = u.role === "paciente" 
@@ -84,7 +92,7 @@ async function cargarUsuarios() {
     });
 
   } catch (error) {
-    console.error("Error cargando usuarios:", error);
+    console.error("[ERROR] Error en cargarUsuarios:", error);
   }
 }
 
