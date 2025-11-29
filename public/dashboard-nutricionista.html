@@ -367,10 +367,8 @@
       alert("Cambios guardados exitosamente.");
       document.getElementById('editarContenidoModal').style.display = 'none';
     };
-  </script>
-</body>
-  <script>
-  // Ejecutar solo si estamos en esta página
+
+    // Ejecutar solo si estamos en esta página
   if (window.location.pathname.includes('dashboard-nutricionista.html')) {
     document.addEventListener("DOMContentLoaded", async () => {
       const token = localStorage.getItem("token");
@@ -390,5 +388,6 @@
       }
     });
   }
-</script>
+  </script>
+</body>
 </html>
