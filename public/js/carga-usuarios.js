@@ -1,30 +1,45 @@
+// carga-usuarios.js
+
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
 const mainContent = document.getElementById("mainContent");
 
-menuToggle.addEventListener("click", () => {
-  sidebar.classList.toggle("active");
-  mainContent.classList.toggle("shifted");
-  menuToggle.classList.add("hidden");
-});
+if (menuToggle && sidebar && mainContent) {
+  menuToggle.addEventListener("click", () => {
+    sidebar.classList.toggle("active");
+    mainContent.classList.toggle("shifted");
+    menuToggle.classList.add("hidden");
+  });
 
-document.addEventListener("click", (event) => {
-  if (
-    sidebar.classList.contains("active") &&
-    !sidebar.contains(event.target) &&
-    event.target !== menuToggle
-  ) {
-    sidebar.classList.remove("active");
-    mainContent.classList.remove("shifted");
-    menuToggle.classList.remove("hidden");
-  }
-});
+  document.addEventListener("click", (event) => {
+    if (
+      sidebar.classList.contains("active") &&
+      !sidebar.contains(event.target) &&
+      event.target !== menuToggle
+    ) {
+      sidebar.classList.remove("active");
+      mainContent.classList.remove("shifted");
+      menuToggle.classList.remove("hidden");
+    }
+  });
+}
 
+// Función de escape HTML
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== "string") return "";
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Cargar usuarios (solo para nutricionista)
 async function cargarUsuarios() {
   const token = localStorage.getItem("token");
   const rol = localStorage.getItem("userRole");
 
-  // ✅ Verificar que el rol sea nutricionista antes de intentar cargar usuarios
   if (rol !== "nutricionista") {
     console.log("Solo el nutricionista puede cargar usuarios.");
     return;
@@ -50,55 +65,38 @@ async function cargarUsuarios() {
     }
 
     const usuariosList = document.getElementById("usuariosList");
+    if (!usuariosList) return;
+
     usuariosList.innerHTML = "";
 
     usuarios.forEach(u => {
+      const botonEditar = u.role === "paciente" 
+        ? `<button class="btn-editar" data-id="${u.id}">Editar</button>`
+        : "";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><b>${u.nombre}</b></td>
-        <td>${u.role}</td>
-        <td>${u.email}</td>
-        <td>
-          <button class="chat-btn openChatBtn" data-id="${u.id}">Chat</button>
-          <button class="delete-btn" data-id="${u.id}">Eliminar</button>
-        </td>
+        <td><b>${escapeHtml(u.nombre)}</b></td>
+        <td>${escapeHtml(u.role)}</td>
+        <td>${botonEditar}</td>
       `;
       usuariosList.appendChild(tr);
     });
 
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const userId = btn.dataset.id;
-        if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
-
-        const res = await fetch(`/users/${userId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (res.ok) {
-          btn.closest("tr").remove();
-          await cargarUsuarios();
-        } else {
-          const error = await res.json();
-          alert("Error: " + error.error);
-        }
-      });
-    });
   } catch (error) {
     console.error("Error cargando usuarios:", error);
   }
 }
 
+// Logout
 document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logoutBtn");
-
-  logoutBtn.addEventListener("click", () => {
-    if (confirm("¿Deseas cerrar sesión?")) {
-      localStorage.clear();
-      window.location.href = "login.html";
-    }
-  });
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      if (confirm("¿Deseas cerrar sesión?")) {
+        localStorage.clear();
+        window.location.href = "login.html";
+      }
+    });
+  }
 });
-
-window.addEventListener("DOMContentLoaded", cargarUsuarios);
