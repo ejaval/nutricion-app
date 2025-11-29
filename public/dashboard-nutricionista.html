@@ -6,6 +6,42 @@
   <title>Nutricionista</title>
   <link rel="stylesheet" href="/css/sidebar.css">
   <link rel="stylesheet" href="/css/chat-modal.css">
+  <style>
+    .video-preview {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      padding: 6px;
+      background: #f0f8ff;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .video-preview video {
+      width: 120px;
+      height: 70px;
+      object-fit: cover;
+      margin-right: 12px;
+    }
+    .btn-eliminar-video, .btn-eliminar-obj {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .objetivo-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .objetivo-item span {
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
   <button class="menu-toggle" id="menuToggle">☰</button>
@@ -37,11 +73,10 @@
     </div>
   </div>
 
-  
-<!-- Mensaje cuando no hay resultados -->
-<div id="noResults" style="display:none; text-align:center; margin-top:10px; color:red;">
-  Usuario no encontrado
-</div>
+  <!-- Mensaje cuando no hay resultados -->
+  <div id="noResults" style="display:none; text-align:center; margin-top:10px; color:red;">
+    Usuario no encontrado
+  </div>
 
   <!-- Modal Individual -->
   <div id="chatModal" class="modal">
@@ -72,6 +107,35 @@
     </div>
   </div>
 
+  <!-- Modal de Edición de Contenido del Paciente -->
+  <div id="editarContenidoModal" class="modal">
+    <div class="modal-content" style="width: 90%; max-width: 700px;">
+      <span class="close" id="cerrarEditarModal">&times;</span>
+      <h2>Editar Contenido - <span id="nombrePacienteModal"></span></h2>
+      
+      <input type="hidden" id="pacienteIdEditar">
+
+      <!-- Sección de Videos -->
+      <h3>Videos</h3>
+      <div id="listaVideosEditar" style="margin-bottom: 15px;"></div>
+      <form id="formSubirVideo">
+        <input type="file" id="nuevoVideo" name="video" accept="video/mp4,video/quicktime" required>
+        <button type="submit">Agregar Video</button>
+      </form>
+      <hr style="margin: 20px 0;">
+
+      <!-- Sección de Objetivos -->
+      <h3>Objetivos</h3>
+      <ul id="listaObjetivosEditar" style="list-style: none; padding: 0;"></ul>
+      <form id="formNuevoObjetivo">
+        <input type="text" id="nuevoObjetivo" placeholder="Nuevo objetivo..." required style="width: 70%;">
+        <button type="submit">Agregar</button>
+      </form>
+
+      <button id="guardarCambiosBtn" style="margin-top: 20px;">Aplicar Cambios</button>
+    </div>
+  </div>
+
   <script src="/js/auth-check.js"></script>
   <script src="/js/carga-usuarios.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -80,16 +144,14 @@
   </script>
   <script src="/js/chat-modal.js"></script>
 
-  <!--buscador-->
-    <script>
-    // Buscador de usuarios
+  <!-- Buscador -->
+  <script>
     const searchInput = document.getElementById("searchInput");
     const usuariosList = document.getElementById("usuariosList");
     const noResults = document.getElementById("noResults");
 
     function filtrarUsuarios() {
       const searchTerm = searchInput.value.toLowerCase().trim();
-
       const rows = usuariosList.getElementsByTagName("tr");
       let hayResultados = false;
 
@@ -97,7 +159,6 @@
         const userNameCell = rows[i].getElementsByTagName("td")[0];
         if (userNameCell) {
           const userName = userNameCell.textContent.toLowerCase();
-
           if (userName.includes(searchTerm)) {
             rows[i].style.display = "";
             hayResultados = true;
@@ -115,6 +176,197 @@
     }
 
     searchInput.addEventListener("input", filtrarUsuarios);
+  </script>
+
+  <!-- Lógica de edición de contenido -->
+  <script>
+    let videosCache = [];
+    let objetivosCache = [];
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('btn-editar')) {
+        const pacienteId = e.target.dataset.id;
+        const nombre = e.target.closest('tr').querySelector('td:first-child').textContent;
+        
+        document.getElementById('pacienteIdEditar').value = pacienteId;
+        document.getElementById('nombrePacienteModal').textContent = nombre;
+        
+        cargarContenidoEdicion(pacienteId);
+        document.getElementById('editarContenidoModal').style.display = 'block';
+      }
+    });
+
+    document.getElementById('cerrarEditarModal').onclick = () => {
+      document.getElementById('editarContenidoModal').style.display = 'none';
+    };
+
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById('editarContenidoModal');
+      if (e.target === modal) modal.style.display = 'none';
+    });
+
+    async function cargarContenidoEdicion(pacienteId) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const resV = await fetch(`/paciente/${pacienteId}/videos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        videosCache = await resV.json();
+        renderVideos();
+
+        const resO = await fetch(`/paciente/${pacienteId}/objetivos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        objetivosCache = await resO.json();
+        renderObjetivos();
+      } catch (err) {
+        console.error("Error al cargar contenido:", err);
+        alert("No se pudo cargar el contenido del paciente.");
+      }
+    }
+
+    function renderVideos() {
+      const cont = document.getElementById('listaVideosEditar');
+      cont.innerHTML = videosCache.length ? '' : '<p>No hay videos.</p>';
+      videosCache.forEach((url, i) => {
+        const div = document.createElement('div');
+        div.className = 'video-preview';
+        div.innerHTML = `
+          <video controls><source src="${url}" type="video/mp4"></video>
+          <button class="btn-eliminar-video" data-index="${i}">Eliminar</button>
+        `;
+        cont.appendChild(div);
+      });
+    }
+
+    function renderObjetivos() {
+      const cont = document.getElementById('listaObjetivosEditar');
+      cont.innerHTML = objetivosCache.length ? '' : '<p>No hay objetivos.</p>';
+      objetivosCache.forEach((obj, i) => {
+        const li = document.createElement('li');
+        li.className = 'objetivo-item';
+        li.innerHTML = `
+          <span>${obj}</span>
+          <button class="btn-eliminar-obj" data-index="${i}">Eliminar</button>
+        `;
+        cont.appendChild(li);
+      });
+    }
+
+    document.getElementById('listaVideosEditar').onclick = (e) => {
+      if (e.target.classList.contains('btn-eliminar-video')) {
+        const index = e.target.dataset.index;
+        const url = videosCache[index];
+        const filename = url.split('/').pop();
+        const pacienteId = document.getElementById('pacienteIdEditar').value;
+        const token = localStorage.getItem('token');
+
+        fetch(`/paciente/${pacienteId}/videos/${filename}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            videosCache.splice(index, 1);
+            renderVideos();
+          }
+        })
+        .catch(err => {
+          console.error("Error eliminando video:", err);
+          alert("Error al eliminar video.");
+        });
+      }
+    };
+
+    document.getElementById('listaObjetivosEditar').onclick = (e) => {
+      if (e.target.classList.contains('btn-eliminar-obj')) {
+        const index = e.target.dataset.index;
+        const descripcion = objetivosCache[index];
+        const pacienteId = document.getElementById('pacienteIdEditar').value;
+        const token = localStorage.getItem('token');
+
+        fetch(`/paciente/${pacienteId}/objetivos`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ descripcion })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            objetivosCache.splice(index, 1);
+            renderObjetivos();
+          }
+        })
+        .catch(err => {
+          console.error("Error eliminando objetivo:", err);
+          alert("Error al eliminar objetivo.");
+        });
+      }
+    };
+
+    document.getElementById('formSubirVideo').onsubmit = async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('nuevoVideo');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const pacienteId = document.getElementById('pacienteIdEditar').value;
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/paciente/${pacienteId}/videos`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        videosCache.push(data.url);
+        renderVideos();
+        fileInput.value = '';
+      } else {
+        alert("Error al subir video.");
+      }
+    };
+
+    document.getElementById('formNuevoObjetivo').onsubmit = async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('nuevoObjetivo');
+      const descripcion = input.value.trim();
+      if (!descripcion) return;
+
+      const pacienteId = document.getElementById('pacienteIdEditar').value;
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(`/paciente/${pacienteId}/objetivos`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ descripcion })
+      });
+
+      if (res.ok) {
+        objetivosCache.push(descripcion);
+        renderObjetivos();
+        input.value = '';
+      } else {
+        alert("Error al agregar objetivo.");
+      }
+    };
+
+    document.getElementById('guardarCambiosBtn').onclick = () => {
+      alert("Cambios guardados exitosamente.");
+      document.getElementById('editarContenidoModal').style.display = 'none';
+    };
   </script>
 </body>
 </html>
