@@ -48,7 +48,8 @@ async function cargarUsuarios() {
   }
 
   try {
-    const res = await fetch("/users", {
+    // 🔥 CAMBIO ÚNICO: usar /api/users
+    const res = await fetch("/api/users", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -97,7 +98,6 @@ async function cargarUsuarios() {
 
 // Inicialización al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
-  // Configurar botón de logout
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ✅ Cargar la lista de usuarios si el contenedor existe
+  // Cargar lista si el contenedor existe
   if (document.getElementById("usuariosList")) {
     cargarUsuarios();
   }
