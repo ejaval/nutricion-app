@@ -369,4 +369,26 @@
     };
   </script>
 </body>
+  <script>
+  // Ejecutar solo si estamos en esta página
+  if (window.location.pathname.includes('dashboard-nutricionista.html')) {
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("token");
+      const userRole = localStorage.getItem("userRole");
+
+      if (!token || userRole !== "nutricionista") {
+        console.log("Redirigiendo a login...");
+        window.location.href = "login.html";
+        return;
+      }
+
+      if (typeof cargarUsuarios === "function") {
+        console.log("Llamando a cargarUsuarios...");
+        await cargarUsuarios();
+      } else {
+        console.error("Función cargarUsuarios no definida");
+      }
+    });
+  }
+</script>
 </html>
