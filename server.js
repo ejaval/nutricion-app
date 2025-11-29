@@ -58,6 +58,26 @@ const pool = new Pool({
       fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  
+  // Tabla para videos educativos por paciente
+  await pool.query(`
+  CREATE TABLE IF NOT EXISTS videos_paciente (
+    id SERIAL PRIMARY KEY,
+    paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// Tabla para objetivos del paciente
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS objetivos_paciente (
+    id SERIAL PRIMARY KEY,
+    paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    descripcion TEXT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
   // Usuario inicial
   const { rows } = await pool.query(
