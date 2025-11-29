@@ -304,6 +304,170 @@ app.get("/chat/:toId", auth, async (req, res) => {
   }
 });
 
+// Subir video para un paciente específico
+app.post("/paciente/:pacienteId/videos", auth, upload.single("video"), async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Solo el nutricionista puede subir videos" });
+  }
+
+  const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) {
+    return res.status(400).json({ error: "ID de paciente inválido" });
+  }
+
+  // Verificar que el paciente existe
+  const { rows: paciente } = await pool.query(
+    `SELECT id FROM users WHERE id = $1 AND role = 'paciente'`,
+    [pacienteId]
+  );
+  if (paciente.length === 0) {
+    return res.status(404).json({ error: "Paciente no encontrado" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: "Archivo de video requerido" });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO videos_paciente (paciente_id, url) VALUES ($1, $2)`,
+      [pacienteId, req.file.filename]
+    );
+    res.json({ ok: true, url: req.file.filename });
+  } catch (err) {
+    console.error("Error subiendo video:", err);
+    res.status(500).json({ error: "Error al guardar video" });
+  }
+});
+
+app.delete("/paciente/:pacienteId/videos/:videoId", auth, async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Acceso denegado" });
+  }
+
+  const pacienteId = parseInt(req.params.pacienteId);
+  const videoId = parseInt(req.params.videoId);
+
+  try {
+    // Verificar que el video pertenece al paciente
+    const { rows } = await pool.query(
+      `SELECT id FROM videos_paciente WHERE id = $1 AND paciente_id = $2`,
+      [videoId, pacienteId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Video no encontrado" });
+    }
+
+    await pool.query(`DELETE FROM videos_paciente WHERE id = $1`, [videoId]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error eliminando video:", err);
+    res.status(500).json({ error: "Error al eliminar video" });
+  }
+});
+
+app.get("/paciente/:pacienteId/videos", auth, async (req, res) => {
+  const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) {
+    return res.status(400).json({ error: "ID inválido" });
+  }
+
+  // Pacientes solo pueden ver sus propios videos; nutricionista puede ver cualquier paciente
+  if (req.user.role === "paciente" && req.user.id !== pacienteId) {
+    return res.status(403).json({ error: "No autorizado" });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT url FROM videos_paciente WHERE paciente_id = $1 ORDER BY creado_en`,
+      [pacienteId]
+    );
+    const videos = rows.map(v => `/uploads/${v.url}`);
+    res.json(videos);
+  } catch (err) {
+    console.error("Error obteniendo videos:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// Obtener objetivos
+app.get("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
+  const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) return res.status(400).json({ error: "ID inválido" });
+
+  if (req.user.role === "paciente" && req.user.id !== pacienteId) {
+    return res.status(403).json({ error: "No autorizado" });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT descripcion FROM objetivos_paciente WHERE paciente_id = $1 ORDER BY creado_en`,
+      [pacienteId]
+    );
+    const objetivos = rows.map(o => o.descripcion);
+    res.json(objetivos);
+  } catch (err) {
+    console.error("Error obteniendo objetivos:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// Agregar objetivo
+app.post("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Solo el nutricionista puede agregar objetivos" });
+  }
+
+  const pacienteId = parseInt(req.params.pacienteId);
+  const { descripcion } = req.body;
+
+  if (!descripcion || typeof descripcion !== "string" || descripcion.trim() === "") {
+    return res.status(400).json({ error: "Descripción requerida" });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO objetivos_paciente (paciente_id, descripcion) VALUES ($1, $2)`,
+      [pacienteId, descripcion.trim()]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error agregando objetivo:", err);
+    res.status(500).json({ error: "Error al guardar objetivo" });
+  }
+});
+
+// Eliminar objetivo (por descripción o por ID – aquí usamos descripción para simplicidad)
+app.delete("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Acceso denegado" });
+  }
+
+  const pacienteId = parseInt(req.params.pacienteId);
+  const { descripcion } = req.body;
+
+  if (!descripcion) {
+    return res.status(400).json({ error: "Descripción requerida" });
+  }
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM objetivos_paciente WHERE paciente_id = $1 AND descripcion = $2`,
+      [pacienteId, descripcion]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Objetivo no encontrado" });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error eliminando objetivo:", err);
+    res.status(500).json({ error: "Error al eliminar objetivo" });
+  }
+});
+
 // VERIFICAR TOKEN
 app.get("/verify-token", auth, (req, res) => {
   res.json({ ok: true, id: req.user.id, role: req.user.role });
