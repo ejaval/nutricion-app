@@ -39,6 +39,7 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+async function cargarUsuarios() {
   try {
     const res = await fetch(`${BACKEND_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` }
