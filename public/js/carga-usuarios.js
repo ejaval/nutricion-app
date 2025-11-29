@@ -1,115 +1,104 @@
-// carga-usuarios.js
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
 const mainContent = document.getElementById("mainContent");
 
-if (menuToggle && sidebar && mainContent) {
-  menuToggle.addEventListener("click", () => {
-    sidebar.classList.toggle("active");
-    mainContent.classList.toggle("shifted");
-    menuToggle.classList.add("hidden");
-  });
+menuToggle.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+  mainContent.classList.toggle("shifted");
+  menuToggle.classList.add("hidden");
+});
 
-  document.addEventListener("click", (event) => {
-    if (
-      sidebar.classList.contains("active") &&
-      !sidebar.contains(event.target) &&
-      event.target !== menuToggle
-    ) {
-      sidebar.classList.remove("active");
-      mainContent.classList.remove("shifted");
-      menuToggle.classList.remove("hidden");
-    }
-  });
-}
+document.addEventListener("click", (event) => {
+  if (
+    sidebar.classList.contains("active") &&
+    !sidebar.contains(event.target) &&
+    event.target !== menuToggle
+  ) {
+    sidebar.classList.remove("active");
+    mainContent.classList.remove("shifted");
+    menuToggle.classList.remove("hidden");
+  }
+});
 
-// Función de escape HTML
-function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return "";
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// Cargar usuarios (solo para nutricionista)
 async function cargarUsuarios() {
   const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("userRole");
+  const rol = localStorage.getItem("userRole");
 
-  console.log("[DEBUG] Token:", token ? "✓" : "✗");
-  console.log("[DEBUG] Rol:", userRole);
-
-  if (!token || userRole !== "nutricionista") {
-    console.log("[ERROR] Acceso denegado: token o rol inválido");
+  // ✅ Verificar que el rol sea nutricionista antes de intentar cargar usuarios
+  if (rol !== "nutricionista") {
+    console.log("Solo el nutricionista puede cargar usuarios.");
     return;
   }
 
+  if (!token) return;
+
   try {
-    // 🔥 CAMBIO ÚNICO: usar /api/users
-    const res = await fetch("/api/users", {
+    const res = await fetch("/users", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log("[DEBUG] Status:", res.status);
-
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error("[ERROR] Respuesta del servidor:", errorText);
+      console.error("Error al cargar usuarios:", res.status, res.statusText);
       return;
     }
 
     const usuarios = await res.json();
-    console.log("[DEBUG] Usuarios recibidos:", usuarios);
+
+    if (!Array.isArray(usuarios)) {
+      console.error("La respuesta de /users no es un array:", usuarios);
+      return;
+    }
 
     const usuariosList = document.getElementById("usuariosList");
-    if (!usuariosList) {
-      console.error("[ERROR] Elemento #usuariosList no encontrado");
-      return;
-    }
-
     usuariosList.innerHTML = "";
 
-    if (usuarios.length === 0) {
-      usuariosList.innerHTML = `<tr><td colspan="3">No hay usuarios registrados.</td></tr>`;
-      return;
-    }
-
     usuarios.forEach(u => {
-      const botonEditar = u.role === "paciente"
-        ? `<button class="btn-editar" data-id="${u.id}">Editar</button>`
-        : "";
-
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><b>${escapeHtml(u.nombre)}</b></td>
-        <td>${escapeHtml(u.role)}</td>
-        <td>${botonEditar}</td>
+        <td><b>${u.nombre}</b></td>
+        <td>${u.role}</td>
+        <td>${u.email}</td>
+        <td>
+          <button class="chat-btn openChatBtn" data-id="${u.id}">Chat</button>
+          <button class="delete-btn" data-id="${u.id}">Eliminar</button>
+        </td>
       `;
       usuariosList.appendChild(tr);
     });
 
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const userId = btn.dataset.id;
+        if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
+
+        const res = await fetch(`/users/${userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          btn.closest("tr").remove();
+          await cargarUsuarios();
+        } else {
+          const error = await res.json();
+          alert("Error: " + error.error);
+        }
+      });
+    });
   } catch (error) {
-    console.error("[ERROR] Error en cargarUsuarios:", error);
+    console.error("Error cargando usuarios:", error);
   }
 }
 
-// Inicialización al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      if (confirm("¿Deseas cerrar sesión?")) {
-        localStorage.clear();
-        window.location.href = "login.html";
-      }
-    });
-  }
 
-  // Cargar lista si el contenedor existe
-  if (document.getElementById("usuariosList")) {
-    cargarUsuarios();
-  }
+  logoutBtn.addEventListener("click", () => {
+    if (confirm("¿Deseas cerrar sesión?")) {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  });
 });
+
+window.addEventListener("DOMContentLoaded", cargarUsuarios);
