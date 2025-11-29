@@ -1,5 +1,4 @@
 // carga-usuarios.js
-
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
 const mainContent = document.getElementById("mainContent");
@@ -73,12 +72,12 @@ async function cargarUsuarios() {
     usuariosList.innerHTML = "";
 
     if (usuarios.length === 0) {
-      usuariosList.innerHTML = "<tr><td colspan='3'>No hay usuarios registrados.</td></tr>";
+      usuariosList.innerHTML = `<tr><td colspan="3">No hay usuarios registrados.</td></tr>`;
       return;
     }
 
     usuarios.forEach(u => {
-      const botonEditar = u.role === "paciente" 
+      const botonEditar = u.role === "paciente"
         ? `<button class="btn-editar" data-id="${u.id}">Editar</button>`
         : "";
 
@@ -96,8 +95,9 @@ async function cargarUsuarios() {
   }
 }
 
-// Logout
+// Inicialización al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
+  // Configurar botón de logout
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
@@ -106,5 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "login.html";
       }
     });
+  }
+
+  // ✅ Cargar la lista de usuarios si el contenedor existe
+  if (document.getElementById("usuariosList")) {
+    cargarUsuarios();
   }
 });
