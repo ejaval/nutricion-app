@@ -41,6 +41,7 @@ function escapeHtml(unsafe) {
 
 async function cargarUsuarios() {
   if (rol !== "nutricionista") return;
+
   try {
     const res = await fetch(`${BACKEND_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` }
