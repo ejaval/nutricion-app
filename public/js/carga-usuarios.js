@@ -57,7 +57,6 @@ async function cargarUsuarios() {
       tr.innerHTML = `
         <td><b>${u.nombre}</b></td>
         <td>${u.role}</td>
-        <td>${u.email}</td>
         <td>
           <button class="chat-btn openChatBtn" data-id="${u.id}">Chat</button>
           <button class="delete-btn" data-id="${u.id}">Eliminar</button>
