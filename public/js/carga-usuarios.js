@@ -119,41 +119,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("DOMContentLoaded", cargarUsuarios);
 
-
-
-/* ==========================================================
-      🔥🔥🔥  CÓDIGO AÑADIDO PARA EL MODAL EDITAR  🔥🔥🔥
-   ========================================================== */
-
 // ========== CARGAR VIDEOS Y OBJETIVOS DEL PACIENTE ==========
-async function cargarContenidoPaciente(id) {
-  const token = localStorage.getItem("token");
+async function cargarContenidoPaciente(pacienteId) {
+    try {
+        // TOKEN
+        const token = localStorage.getItem("token");
 
-  try {
-    const res = await fetch(`/contenido/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+        // ============================
+        // CARGAR VIDEOS
+        // ============================
+        const resVideos = await fetch(`/paciente/${pacienteId}/videos`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
 
-    if (!res.ok) {
-      console.error("Error cargando contenido:", res.status);
-      return;
+        if (!resVideos.ok) throw new Error("Error cargando videos");
+        const videos = await resVideos.json();
+
+        const listaVideos = document.getElementById("listaVideosEditar");
+        listaVideos.innerHTML = "";
+
+        videos.forEach((url, index) => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <video width="250" controls>
+                    <source src="${url}" type="video/mp4">
+                </video>
+                <button class="btnEliminarVideo" data-index="${index}">Eliminar</button>
+            `;
+            listaVideos.appendChild(div);
+        });
+
+        // ============================
+        // CARGAR OBJETIVOS
+        // ============================
+        const resObj = await fetch(`/paciente/${pacienteId}/objetivos`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!resObj.ok) throw new Error("Error cargando objetivos");
+        const objetivos = await resObj.json();
+
+        const listaObj = document.getElementById("listaObjetivosEditar");
+        listaObj.innerHTML = "";
+
+        objetivos.forEach(obj => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                ${obj}
+                <button class="btnEliminarObjetivo" data-descripcion="${obj}">Eliminar</button>
+            `;
+            listaObj.appendChild(li);
+        });
+
+    } catch (err) {
+        console.error("Error cargando contenido:", err);
     }
-
-    const data = await res.json();
-
-    // ==== VIDEOS ====
-    const listaVideos = document.getElementById("listaVideosEditar");
-    listaVideos.innerHTML = "";
-
-    data.videos.forEach(video => {
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <video src="${video.url}" width="200" controls></video>
-        <button class="btnEliminarVideo" data-id="${video.id}">Eliminar</button>
-        <hr>
-      `;
-      listaVideos.appendChild(div);
-    });
+}
 
     // ==== OBJETIVOS ====
     const listaObjetivos = document.getElementById("listaObjetivosEditar");
