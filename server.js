@@ -23,11 +23,15 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+const uploadsPath = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath);
+}
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(uploadsPath));
 
 // ============================
 // 3. Base de datos
