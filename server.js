@@ -11,6 +11,7 @@ const path = require("path");
 const { Pool } = require("pg");
 const { Server } = require("socket.io");
 const http = require("http");
+const fs = require("fs"); 
 
 // ============================
 // 2. Crear app y servidor
