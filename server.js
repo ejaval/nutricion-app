@@ -11,7 +11,7 @@ const path = require("path");
 const { Pool } = require("pg");
 const { Server } = require("socket.io");
 const http = require("http");
-const fs = require("fs");
+const fs = require("fs"); 
 
 // ============================
 // 2. Crear app y servidor
@@ -20,26 +20,35 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://nutricion-app-1.onrender.com",
-    methods: ["GET", "POST"],
-  },
+    origin: "https://nutricion-app-1.onrender.com", // ← Cambia a tu dominio real
+    methods: ["GET", "POST"]
+  }
 });
-
-// ============================
-// 2.1 Crear carpeta uploads si no existe
-// ============================
 const uploadsPath = path.join(__dirname, "uploads");
-
 if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
-  console.log("Carpeta /uploads creada automáticamente");
-
-  // Hacer que Render NO borre esta carpeta
-  fs.writeFileSync(path.join(uploadsPath, ".gitkeep"), "");
-  console.log("Archivo .gitkeep creado dentro de /uploads");
+  fs.mkdirSync(uploadsPath);
 }
 
-// Servir archivos estáticos
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multer = require("multer");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "videos_pacientes",
+    resource_type: "video"
+  }
+});
+
+const upload = multer({ storage });
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
@@ -50,10 +59,10 @@ app.use("/uploads", express.static(uploadsPath));
 // ============================
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false }
 });
 
-// Crear tablas
+// Crear tablas si no existen
 (async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -75,35 +84,36 @@ const pool = new Pool({
     )
   `);
 
+  // Tabla para videos educativos por paciente
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS videos_paciente (
-      id SERIAL PRIMARY KEY,
-      paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      url TEXT NOT NULL,
-      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  CREATE TABLE IF NOT EXISTS videos_paciente (
+    id SERIAL PRIMARY KEY,
+    paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS objetivos_paciente (
-      id SERIAL PRIMARY KEY,
-      paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      descripcion TEXT NOT NULL,
-      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+// Tabla para objetivos del paciente
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS objetivos_paciente (
+    id SERIAL PRIMARY KEY,
+    paciente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    descripcion TEXT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
-  // Crear nutricionista por defecto
+  // Usuario inicial
   const { rows } = await pool.query(
-    `SELECT * FROM users WHERE LOWER(nombre)=LOWER($1)`,
+    `SELECT * FROM users WHERE LOWER(nombre) = LOWER($1)`,
     ["katya cruz"]
   );
 
   if (rows.length === 0) {
     const hash = bcrypt.hashSync("123456", 8);
     await pool.query(
-      `INSERT INTO users (nombre, password, role)
-       VALUES ($1, $2, $3)`,
+      `INSERT INTO users (nombre, password, role) VALUES ($1, $2, $3)`,
       ["katya cruz", hash, "nutricionista"]
     );
     console.log("Usuario inicial creado: katya cruz / 123456");
@@ -111,16 +121,14 @@ const pool = new Pool({
 })();
 
 // ============================
-// 4. JWT
+// 4. JWT y middleware auth
 // ============================
 const SECRET = "secreto123";
-
 function auth(req, res, next) {
   let token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: "Token requerido" });
 
   if (token.startsWith("Bearer ")) token = token.slice(7);
-
   jwt.verify(token, SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: "Token inválido" });
     req.user = user;
@@ -129,25 +137,25 @@ function auth(req, res, next) {
 }
 
 // ============================
-// 5. Multer
+// 5. Multer para archivos
 // ============================
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsPath),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + path.extname(file.originalname)),
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
-
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    const ok =
-      /jpeg|jpg|png|pdf|doc|docx|mp4/.test(
-        path.extname(file.originalname).toLowerCase()
-      ) && /jpeg|jpg|png|pdf|mp4|/.test(file.mimetype);
+    const allowedTypes = /jpeg|jpg|png|pdf|doc|docx|mp4/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
 
-    if (ok) cb(null, true);
-    else cb(new Error("Tipo de archivo no permitido"));
-  },
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Tipo de archivo no permitido"));
+    }
+  }
 });
 
 // ============================
@@ -157,51 +165,65 @@ const upload = multer({
 // LOGIN
 app.post("/login", async (req, res) => {
   const { nombre, password } = req.body;
-  if (!nombre || !password)
-    return res.status(400).json({ error: "Nombre y contraseña requeridos" });
+  if (!nombre || !password) {
+    return res.status(400).json({ error: "Nombre y contraseña son requeridos." });
+  }
 
-  const { rows } = await pool.query(
-    `SELECT * FROM users WHERE LOWER(nombre)=LOWER($1)`,
-    [nombre]
-  );
-  const user = rows[0];
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM users WHERE LOWER(nombre)=LOWER($1)`,
+      [nombre]
+    );
+    const user = rows[0];
 
-  if (!user) return res.status(400).json({ error: "Usuario no existe" });
+    if (!user) return res.status(400).json({ error: "Usuario no existe" });
 
-  const valid = bcrypt.compareSync(password, user.password);
-  if (!valid) return res.status(400).json({ error: "Contraseña incorrecta" });
+    const validPassword = bcrypt.compareSync(password, user.password);
+    if (!validPassword) return res.status(400).json({ error: "Contraseña incorrecta" });
 
-  const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
-    expiresIn: "12h",
-  });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET,
+      { expiresIn: "12h" }
+    );
 
-  res.json({ token, id: user.id, role: user.role });
+    res.json({ token, id: user.id, role: user.role });
+
+  } catch (err) {
+    console.error("Error en login:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
-// CREAR USUARIO
+//CREAR USUARIO
 app.post("/create-user", auth, async (req, res) => {
   if (req.user.role !== "nutricionista")
-    return res.status(403).json({ error: "No autorizado" });
+    return res.status(403).json({ error: "Solo el nutricionista puede crear usuarios" });
 
   const { nombre, password, role } = req.body;
+  if (!nombre || !password || !role)
+    return res.status(400).json({ error: "Todos los campos son requeridos" });
 
-  const existing = await pool.query(
-    `SELECT id FROM users WHERE LOWER(nombre)=LOWER($1)`,
-    [nombre]
-  );
+  try {
+    const existing = await pool.query(
+      `SELECT id FROM users WHERE LOWER(nombre)=LOWER($1)`,
+      [nombre]
+    );
+    if (existing.rows.length > 0)
+      return res.status(400).json({ error: "Ya existe un usuario con ese nombre" });
 
-  if (existing.rows.length > 0)
-    return res.status(400).json({ error: "Usuario ya existe" });
+    const hash = bcrypt.hashSync(password, 8);
+    const result = await pool.query(
+      `INSERT INTO users (nombre, password, role) VALUES ($1, $2, $3) RETURNING id`,
+      [nombre, hash, role]
+    );
 
-  const hash = bcrypt.hashSync(password, 8);
+    res.json({ id: result.rows[0].id, nombre, role });
 
-  const result = await pool.query(
-    `INSERT INTO users (nombre, password, role)
-     VALUES ($1,$2,$3) RETURNING id`,
-    [nombre, hash, role]
-  );
-
-  res.json({ id: result.rows[0].id, nombre, role });
+  } catch (err) {
+    console.error("Error creando usuario:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 // LISTAR USUARIOS
@@ -209,191 +231,280 @@ app.get("/users", auth, async (req, res) => {
   if (req.user.role !== "nutricionista")
     return res.status(403).json({ error: "Acceso denegado" });
 
-  const { rows } = await pool.query(
-    `SELECT id, nombre, role FROM users ORDER BY id DESC`
-  );
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, nombre, role FROM users ORDER BY id DESC`
+    );
+    res.json(rows);
 
-  res.json(rows);
+  } catch (err) {
+    console.error("Error listando usuarios:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 // ENVIAR MENSAJE
 app.post("/chat/send", auth, upload.single("archivo"), async (req, res) => {
   const { toId } = req.body;
-  const mensaje = req.body.mensaje || "";
-
+  const mensaje = req.body.mensaje || req.body.mensajeGrupal || "";
   const archivo = req.file ? req.file.filename : null;
 
-  const result = await pool.query(
-    `INSERT INTO mensajes (fromId, "toId", mensaje, archivo)
-     VALUES ($1,$2,$3,$4) RETURNING id, fecha`,
-    [req.user.id, toId || 0, mensaje, archivo]
-  );
-
-  const msg = {
-    id: result.rows[0].id,
-    fromId: req.user.id,
-    toId: parseInt(toId) || 0,
-    mensaje,
-    archivo,
-    fecha: result.rows[0].fecha,
-  };
-
-  if (msg.toId === 0) io.emit("nuevoMensaje", msg);
-  else {
-    io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);
-    io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);
+  if (!mensaje && !archivo) {
+    return res.status(400).json({ error: "Mensaje o archivo requerido." });
   }
 
-  res.json({ ok: true });
+  try {
+    const result = await pool.query(
+      `INSERT INTO mensajes (fromId, "toId", mensaje, archivo)
+       VALUES ($1, $2, $3, $4) RETURNING id, fecha`,
+      [req.user.id, toId || 0, mensaje, archivo]
+    );
+
+    const { rows } = await pool.query(
+      `SELECT nombre FROM users WHERE id=$1`,
+      [req.user.id]
+    );
+
+    const fromNombre = rows[0]?.nombre || "Desconocido";
+
+    const msg = {
+      id: result.rows[0].id,
+      fromId: req.user.id,
+      fromNombre,
+      toId: parseInt(toId) || 0,
+      mensaje,
+      archivo,
+      fecha: result.rows[0].fecha,
+    };
+
+    if (msg.toId === 0) {
+      io.emit("nuevoMensaje", msg); // Chat grupal: todos los conectados
+    } else {
+      io.to(`user_${msg.toId}`).emit("nuevoMensaje", msg);    // Al receptor
+      io.to(`user_${msg.fromId}`).emit("nuevoMensaje", msg);  // Al emisor también
+    }
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("Error enviando mensaje:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 // OBTENER MENSAJES
 app.get("/chat/:toId", auth, async (req, res) => {
   const toId = parseInt(req.params.toId);
+  if (isNaN(toId)) return res.status(400).json({ error: "ID inválido" });
 
-  let rows;
+  try {
+    let rows;
 
-  if (toId === 0) {
-    ({ rows } = await pool.query(`
-      SELECT m.*, u.nombre AS "fromNombre"
-      FROM mensajes m
-      JOIN users u ON m.fromId = u.id
-      WHERE m."toId" = 0
-      ORDER BY m.fecha
-    `));
-  } else {
-    ({ rows } = await pool.query(
-      `
-      SELECT m.*, u.nombre AS "fromNombre"
-      FROM mensajes m
-      JOIN users u ON m.fromId = u.id
-      WHERE (m.fromId=$1 AND m."toId"=$2)
-         OR (m.fromId=$2 AND m."toId"=$1)
-      ORDER BY m.fecha
-    `,
-      [req.user.id, toId]
-    ));
+    if (toId === 0) {
+      // Chat grupal
+      ({ rows } = await pool.query(`
+        SELECT m.*, u.nombre AS "fromNombre"
+        FROM mensajes m
+        JOIN users u ON m.fromId = u.id
+        WHERE m."toId" = 0
+        ORDER BY m.fecha
+      `));
+    } else {
+      // Chat individual
+      ({ rows } = await pool.query(`
+        SELECT m.*, u.nombre AS "fromNombre"
+        FROM mensajes m
+        JOIN users u ON m.fromId = u.id
+        WHERE (m.fromId = $1 AND m."toId" = $2)
+           OR (m.fromId = $2 AND m."toId" = $1)
+        ORDER BY m.fecha
+      `, [req.user.id, toId]));
+    }
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Error obteniendo mensajes:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
-
-  res.json(rows);
 });
 
-// SUBIR VIDEO
-app.post(
-  "/paciente/:pacienteId/videos",
-  auth,
-  upload.single("video"),
-  async (req, res) => {
-    if (req.user.role !== "nutricionista")
-      return res.status(403).json({ error: "No autorizado" });
-
-    const pacienteId = parseInt(req.params.pacienteId);
-
-    if (!req.file)
-      return res.status(400).json({ error: "Debe subir un archivo" });
-
-    await pool.query(
-      `INSERT INTO videos_paciente (paciente_id, url)
-       VALUES ($1,$2)`,
-      [pacienteId, req.file.filename]
-    );
-
-    res.json({ ok: true, url: req.file.filename });
+// Subir video para un paciente específico
+app.post("/paciente/:pacienteId/videos", auth, upload.single("video"), async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Solo el nutricionista puede subir videos" });
   }
-);
 
-// LISTAR VIDEOS
-app.get("/paciente/:pacienteId/videos", auth, async (req, res) => {
   const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) {
+    return res.status(400).json({ error: "ID de paciente inválido" });
+  }
 
-  const { rows } = await pool.query(
-    `SELECT url FROM videos_paciente WHERE paciente_id=$1 ORDER BY creado_en`,
+  // Verificar que el paciente existe
+  const { rows: paciente } = await pool.query(
+    `SELECT id FROM users WHERE id = $1 AND role = 'paciente'`,
     [pacienteId]
   );
+  if (paciente.length === 0) {
+    return res.status(404).json({ error: "Paciente no encontrado" });
+  }
 
-  res.json(rows.map((v) => `/uploads/${v.url}`));
+  if (!req.file) {
+    return res.status(400).json({ error: "Archivo de video requerido" });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO videos_paciente (paciente_id, url) VALUES ($1, $2)`,
+      [pacienteId, req.file.filename]
+    );
+    res.json({ ok: true, url: req.file.filename });
+  } catch (err) {
+    console.error("Error subiendo video:", err);
+    res.status(500).json({ error: "Error al guardar video" });
+  }
 });
 
-// ELIMINAR VIDEO
 app.delete("/paciente/:pacienteId/videos/:videoId", auth, async (req, res) => {
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Acceso denegado" });
+  }
+
   const pacienteId = parseInt(req.params.pacienteId);
   const videoId = parseInt(req.params.videoId);
 
-  const { rows } = await pool.query(
-    `SELECT url FROM videos_paciente WHERE id=$1 AND paciente_id=$2`,
-    [videoId, pacienteId]
-  );
+  try {
+    // Verificar que el video pertenece al paciente
+    const { rows } = await pool.query(
+      `SELECT id FROM videos_paciente WHERE id = $1 AND paciente_id = $2`,
+      [videoId, pacienteId]
+    );
 
-  if (rows.length === 0)
-    return res.status(404).json({ error: "Video no encontrado" });
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Video no encontrado" });
+    }
 
-  const filename = rows[0].url;
-
-  // Eliminar archivo del servidor
-  fs.unlink(path.join(uploadsPath, filename), () =>
-    console.log("Archivo eliminado:", filename)
-  );
-
-  // Eliminar de la base
-  await pool.query(`DELETE FROM videos_paciente WHERE id=$1`, [videoId]);
-
-  res.json({ ok: true });
+    await pool.query(`DELETE FROM videos_paciente WHERE id = $1`, [videoId]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error eliminando video:", err);
+    res.status(500).json({ error: "Error al eliminar video" });
+  }
 });
 
-// OBJETIVOS - Obtener
+app.get("/paciente/:pacienteId/videos", auth, async (req, res) => {
+  const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) {
+    return res.status(400).json({ error: "ID inválido" });
+  }
+
+  // Pacientes solo pueden ver sus propios videos; nutricionista puede ver cualquier paciente
+  if (req.user.role === "paciente" && req.user.id !== pacienteId) {
+    return res.status(403).json({ error: "No autorizado" });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT url FROM videos_paciente WHERE paciente_id = $1 ORDER BY creado_en`,
+      [pacienteId]
+    );
+    const videos = rows.map(v => `/uploads/${v.url}`);
+    res.json(videos);
+  } catch (err) {
+    console.error("Error obteniendo videos:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
+});
+
+// Obtener objetivos
 app.get("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
   const pacienteId = parseInt(req.params.pacienteId);
+  if (isNaN(pacienteId)) return res.status(400).json({ error: "ID inválido" });
 
-  const { rows } = await pool.query(
-    `SELECT descripcion FROM objetivos_paciente WHERE paciente_id=$1 ORDER BY creado_en`,
-    [pacienteId]
-  );
+  if (req.user.role === "paciente" && req.user.id !== pacienteId) {
+    return res.status(403).json({ error: "No autorizado" });
+  }
 
-  res.json(rows.map((o) => o.descripcion));
+  try {
+    const { rows } = await pool.query(
+      `SELECT descripcion FROM objetivos_paciente WHERE paciente_id = $1 ORDER BY creado_en`,
+      [pacienteId]
+    );
+    const objetivos = rows.map(o => o.descripcion);
+    res.json(objetivos);
+  } catch (err) {
+    console.error("Error obteniendo objetivos:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
 });
 
-// OBJETIVOS - Agregar
+// Agregar objetivo
 app.post("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
-  if (req.user.role !== "nutricionista")
-    return res.status(403).json({ error: "No autorizado" });
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Solo el nutricionista puede agregar objetivos" });
+  }
 
-  const { descripcion } = req.body;
   const pacienteId = parseInt(req.params.pacienteId);
+  const { descripcion } = req.body;
 
-  await pool.query(
-    `INSERT INTO objetivos_paciente (paciente_id, descripcion)
-     VALUES ($1,$2)`,
-    [pacienteId, descripcion]
-  );
+  if (!descripcion || typeof descripcion !== "string" || descripcion.trim() === "") {
+    return res.status(400).json({ error: "Descripción requerida" });
+  }
 
-  res.json({ ok: true });
+  try {
+    await pool.query(
+      `INSERT INTO objetivos_paciente (paciente_id, descripcion) VALUES ($1, $2)`,
+      [pacienteId, descripcion.trim()]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error agregando objetivo:", err);
+    res.status(500).json({ error: "Error al guardar objetivo" });
+  }
 });
 
-// OBJETIVOS - Eliminar
+// Eliminar objetivo (por descripción o por ID – aquí usamos descripción para simplicidad)
 app.delete("/paciente/:pacienteId/objetivos", auth, async (req, res) => {
-  if (req.user.role !== "nutricionista")
-    return res.status(403).json({ error: "No autorizado" });
+  if (req.user.role !== "nutricionista") {
+    return res.status(403).json({ error: "Acceso denegado" });
+  }
 
-  const { descripcion } = req.body;
   const pacienteId = parseInt(req.params.pacienteId);
+  const { descripcion } = req.body;
 
-  const r = await pool.query(
-    `DELETE FROM objetivos_paciente WHERE paciente_id=$1 AND descripcion=$2`,
-    [pacienteId, descripcion]
-  );
+  if (!descripcion) {
+    return res.status(400).json({ error: "Descripción requerida" });
+  }
 
-  if (r.rowCount === 0)
-    return res.status(404).json({ error: "Objetivo no encontrado" });
+  try {
+    const result = await pool.query(
+      `DELETE FROM objetivos_paciente WHERE paciente_id = $1 AND descripcion = $2`,
+      [pacienteId, descripcion]
+    );
 
-  res.json({ ok: true });
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Objetivo no encontrado" });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error eliminando objetivo:", err);
+    res.status(500).json({ error: "Error al eliminar objetivo" });
+  }
+});
+
+// VERIFICAR TOKEN
+app.get("/verify-token", auth, (req, res) => {
+  res.json({ ok: true, id: req.user.id, role: req.user.role });
 });
 
 // ============================
-// 7. SOCKET.IO
+// 7. Socket.IO en tiempo real
 // ============================
 io.use((socket, next) => {
   let token = socket.handshake.auth.token;
   if (!token) return next(new Error("Token requerido"));
+
   jwt.verify(token, SECRET, (err, user) => {
     if (err) return next(new Error("Token inválido"));
     socket.user = user;
@@ -403,11 +514,14 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("Usuario conectado:", socket.user.id);
+  console.log(`Usuario conectado: ID=${socket.user.id}`);
+  socket.on("disconnect", () => {
+    console.log(`Usuario desconectado: ID=${socket.user.id}`);
+  });
 });
 
 // ============================
-// 8. Iniciar Servidor
+// 8. Iniciar servidor
 // ============================
 const port = process.env.PORT || 3000;
 
