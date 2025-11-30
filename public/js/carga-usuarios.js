@@ -58,6 +58,7 @@ async function cargarUsuarios() {
         <td><b>${u.nombre}</b></td>
         <td>${u.role}</td>
         <td>
+          <button class="edit-btn" data-id="${u.id}" data-nombre="${u.nombre}">Editar</button>
           <button class="chat-btn openChatBtn" data-id="${u.id}">Chat</button>
           <button class="delete-btn" data-id="${u.id}">Eliminar</button>
         </td>
