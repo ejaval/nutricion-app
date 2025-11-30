@@ -268,3 +268,8 @@ document.getElementById("formNuevoObjetivo").addEventListener("submit", async (e
 document.getElementById("cerrarEditarModal").addEventListener("click", () => {
     document.getElementById("editarContenidoModal").style.display = "none";
 });
+
+window.addEventListener("click", function (e) { 
+  const modal = document.getElementById("editarContenidoModal"); 
+  if (e.target === modal) modal.style.display = "none"; 
+});
