@@ -201,6 +201,19 @@
         cargarContenidoPaciente();
       }
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (!logoutBtn) return;
+
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // evita que href="#" mueva la página
+    if (confirm('¿Deseas cerrar sesión?')) {
+      localStorage.clear();          // limpia datos locales
+      window.location.href = '/login.html'; // redirige a login
+    }
+  });
+});
   </script>
 </body>
 </html>
