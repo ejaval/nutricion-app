@@ -239,3 +239,24 @@ tr:hover {
   transform: scale(1.05);
 }
 
+/* Contenedor apilado */
+.dashboard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Estilo general de tus tarjetas */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Responsive: puedes ajustar si quieres más separación */
+@media (max-width: 768px) {
+  .dashboard-stack {
+    gap: 15px;
+  }
+}
