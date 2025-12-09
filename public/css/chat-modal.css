@@ -1,4 +1,6 @@
-/* Estilo del modal */
+/* ===========================
+   ESTILO GENERAL DEL MODAL
+   =========================== */
 .modal {
   display: none;
   position: fixed;
@@ -8,65 +10,49 @@
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: rgba(0,0,0,0.6);
+  padding-top: 40px;
+  background-color: rgba(0, 0, 0, 0.6);
 }
+
+/* Responsive del modal */
 .modal-content {
   background: #fff;
-  margin: 5% auto;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 20px;
-  cursor: pointer;
-}
-#chatBox {
-  border: 1px solid #ccc;
-  height: 250px;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  padding: 5px;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  padding-top: 60px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-  background-color: #fefefe;
   margin: auto;
   padding: 20px;
-  border: 1px solid #888;
-  width: 50%;
-  border-radius: 8px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    width: 60%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-content {
+    width: 40%;
+  }
 }
 
 .close, .close-grupal {
-  color: #aaa;
+  color: #888;
   float: right;
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 24px;
   cursor: pointer;
 }
 
 .close:hover, .close-grupal:hover {
-  color: black;
+  color: #000;
 }
 
-#chatBox, #chatGrupalBox {
+/* ===========================
+   CAJA DE CHAT
+   =========================== */
+#chatBox,
+#chatGrupalBox {
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -75,18 +61,23 @@
   border: 1px solid #ccc;
   background: #f9f9f9;
   font-family: Arial, sans-serif;
+  border-radius: 8px;
 }
 
+/* ===========================
+   BURBUJAS DE MENSAJE
+   =========================== */
 #chatBox div.mensaje-mio,
 #chatGrupalBox div.mensaje-mio {
   background-color: #DCF8C6;
   padding: 8px 12px;
   margin: 5px 0;
-  border-radius: 10px 10px 0 10px;
-  max-width: 70%;
+  border-radius: 12px 12px 0 12px;
+  max-width: 80%;
   align-self: flex-end;
   text-align: right;
   box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  word-break: break-word;
 }
 
 #chatBox div.mensaje-otro,
@@ -94,13 +85,17 @@
   background-color: #FFFFFF;
   padding: 8px 12px;
   margin: 5px 0;
-  border-radius: 10px 10px 10px 0;
-  max-width: 70%;
+  border-radius: 12px 12px 12px 0;
+  max-width: 80%;
   align-self: flex-start;
   text-align: left;
   box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  word-break: break-word;
 }
 
+/* ===========================
+   TEXTO Y FECHA
+   =========================== */
 .mensaje-texto {
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -108,7 +103,52 @@
 
 .mensaje-fecha {
   font-size: 0.75em;
-  color: #888;
+  color: #777;
   margin-top: 3px;
   font-style: italic;
+}
+
+/* ===========================
+   ARCHIVOS ENVIADOS (Estilo WhatsApp)
+   =========================== */
+.mensaje-archivo {
+  background-color: #E7F3FF;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 80%;
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.mensaje-archivo i {
+  font-size: 26px;
+  color: #007bff;
+}
+
+.mensaje-archivo .archivo-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.mensaje-archivo .archivo-nombre {
+  font-weight: bold;
+  word-break: break-word;
+}
+
+.mensaje-archivo .archivo-descargar {
+  font-size: 0.8em;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Adaptación responsive para archivos */
+@media (max-width: 480px) {
+  .mensaje-archivo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
