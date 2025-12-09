@@ -209,7 +209,7 @@ tr:hover {
 /* ============================
    PAGINACIÓN TABLA DE USUARIOS
    ============================ */
-#paginacion {
+.pagination {
   margin-top: 20px;
   display: flex;
   justify-content: center;
@@ -217,7 +217,7 @@ tr:hover {
   flex-wrap: wrap;
 }
 
-#paginacion .page-btn {
+.page-btn {
   padding: 8px 14px;
   border: 1px solid #cccccc;
   background: white;
@@ -227,8 +227,16 @@ tr:hover {
   transition: 0.2s ease;
 }
 
-#paginacion .page-btn:hover {
+.page-btn:hover {
   background: #eaeaea;
+}
+
+.page-btn.active {
+  background: #2e86de;
+  color: white;
+  border-color: #2e86de;
+  font-weight: bold;
+  transform: scale(1.05);
 }
 
 /* Contenedor apilado */
