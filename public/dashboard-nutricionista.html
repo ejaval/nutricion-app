@@ -74,11 +74,9 @@
     <!-- PAGINADOR -->
     <div id="paginationControls" class="pagination">
       <button id="prevPage">Anterior</button>
-      <div id="pageNumbers"></div>
+      <span id="pageIndicator" class="page-indicator">1</span>
       <button id="nextPage">Siguiente</button>
     </div>
-
-
 
   <!-- Mensaje cuando no hay resultados -->
   <div id="noResults" style="display:none; text-align:center; margin-top:10px; color:red;">
@@ -184,69 +182,48 @@
       searchInput.addEventListener("input", filtrarUsuarios);
     }
 
-    //Paginador
-    let currentPage = 1;
-    const rowsPerPage = 10; // cantidad visible por página
-    const usuariosTable = document.getElementById("usuariosList");
-    const pageNumbersContainer = document.getElementById("pageNumbers");
-    
-    function renderPagination(totalRows) {
-      const totalPages = Math.ceil(totalRows / rowsPerPage);
-      pageNumbersContainer.innerHTML = "";
-      
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.classList.add("page-btn");
-        btn.textContent = i;
-        
-        if (i === currentPage) btn.classList.add("active");
-        
-        btn.addEventListener("click", () => {
-          currentPage = i;
-          mostrarPagina();
-          renderPagination(totalRows);
-        });
-        pageNumbersContainer.appendChild(btn);
-      }
-    }
-    
-    function mostrarPagina() {
-      const rows = usuariosTable.getElementsByTagName("tr");
-      const totalRows = rows.length;
-      
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      
-      for (let i = 0; i < totalRows; i++) {
-        rows[i].style.display = (i >= start && i < end) ? "" : "none";
-      }
-    }
-    
-    document.getElementById("prevPage").onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        mostrarPagina();
-        renderPagination(usuariosTable.getElementsByTagName("tr").length);
-      }
-    };
-    
-    document.getElementById("nextPage").onclick = () => {
-      const totalRows = usuariosTable.getElementsByTagName("tr").length;
-      const totalPages = Math.ceil(totalRows / rowsPerPage);
-      
-      if (currentPage < totalPages) {
-        currentPage++;
-        mostrarPagina();
-        renderPagination(totalRows);
-      }
-    };
+// PAGINADOR
+let currentPage = 1;
+const rowsPerPage = 10;
+const usuariosTable = document.getElementById("usuariosList");
+const pageIndicator = document.getElementById("pageIndicator");
 
-// Ejecutar cuando ya cargaron los usuarios
-    setTimeout(() => {
-      const totalRows = usuariosTable.getElementsByTagName("tr").length;
-      mostrarPagina();
-      renderPagination(totalRows);
-    }, 500);
+function mostrarPagina() {
+  const rows = usuariosTable.getElementsByTagName("tr");
+  const totalRows = rows.length;
+  const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+
+  for (let i = 0; i < totalRows; i++) {
+    rows[i].style.display = (i >= start && i < end) ? "" : "none";
+  }
+
+  pageIndicator.textContent = currentPage;
+}
+
+document.getElementById("prevPage").onclick = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    mostrarPagina();
+  }
+};
+
+document.getElementById("nextPage").onclick = () => {
+  const rows = usuariosTable.getElementsByTagName("tr");
+  const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+  if (currentPage < totalPages) {
+    currentPage++;
+    mostrarPagina();
+  }
+};
+
+// Ejecutar después de cargar usuarios
+setTimeout(() => {
+  mostrarPagina();
+}, 500);
 
 
     // === Lógica de edición de contenido ===
