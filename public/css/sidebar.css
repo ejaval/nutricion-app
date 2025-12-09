@@ -217,15 +217,7 @@ tr:hover {
   flex-wrap: wrap;
 }
 
-#paginacion .page-btn {
-  padding: 8px 14px;
-  border: 1px solid #cccccc;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 6px;
-  transition: 0.2s ease;
-}
+
 
 #paginacion .page-btn:hover {
   background: #eaeaea;
