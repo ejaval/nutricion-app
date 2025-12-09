@@ -64,18 +64,19 @@ async function cargarMensajesIndividuales(destinatarioId) {
 
   mensajes.forEach(msg => {
     const esMio = msg.fromId == myId;
-    const clase = esMio ? "mensaje-mio" : "mensaje-otro";
+    const autor = esMio ? "Tú" : (msg.fromNombre || usuariosMap[msg.fromId] || `Usuario ${msg.fromId}`);
+    const claseMensaje = esMio ? "mensaje-mio" : "mensaje-otro";
     const fechaHora = msg.fecha ? formatearFechaHora(msg.fecha) : "";
 
-    box.innerHTML += generarBurbujaMensaje({
-      autor: esMio ? "Tú" : msg.fromNombre,
-      texto: msg.mensaje,
-      archivo: msg.archivo,
-      clase,
-      fecha: fechaHora
-    });
+    box.innerHTML += `
+      <div class="${claseMensaje}">
+        <div class="mensaje-texto">
+          <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
+          ${msg.archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+        </div>
+        <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+      </div>`;
   });
-
   box.scrollTop = box.scrollHeight;
 }
 
@@ -84,27 +85,40 @@ async function cargarMensajesGrupales() {
     headers: { Authorization: `Bearer ${token}` }
   });
 
+  if (!res.ok) {
+    console.error("Error al cargar mensajes grupales:", res.status, await res.text());
+    alert("Error al cargar mensajes grupales.");
+    return;
+  }
+
   const mensajes = await res.json();
+
+  if (!Array.isArray(mensajes)) {
+    console.error("La respuesta no es un array:", mensajes);
+    alert("Formato de mensajes inválido.");
+    return;
+  }
+
   const box = document.getElementById("chatGrupalBox");
   box.innerHTML = "";
 
   mensajes.forEach(msg => {
     const esMio = msg.fromId == myId;
-    const clase = esMio ? "mensaje-mio" : "mensaje-otro";
+    const autor = esMio ? "Tú" : (msg.fromNombre || usuariosMap[msg.fromId] || `Usuario ${msg.fromId}`);
+    const claseMensaje = esMio ? "mensaje-mio" : "mensaje-otro";
     const fechaHora = msg.fecha ? formatearFechaHora(msg.fecha) : "";
 
-    box.innerHTML += generarBurbujaMensaje({
-      autor: esMio ? "Tú" : msg.fromNombre,
-      texto: msg.mensaje,
-      archivo: msg.archivo,
-      clase,
-      fecha: fechaHora
-    });
+    box.innerHTML += `
+      <div class="${claseMensaje}">
+        <div class="mensaje-texto">
+          <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(msg.mensaje)}
+          ${msg.archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(msg.archivo)}" target="_blank">📎 Archivo</a>` : ""}
+        </div>
+        <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+      </div>`;
   });
-
   box.scrollTop = box.scrollHeight;
 }
-
 
 function configurarSocket() {
   if (socketInitialized) {
@@ -141,29 +155,40 @@ function configurarSocket() {
 
   socket.off("nuevoMensaje");
   socket.on("nuevoMensaje", (msg) => {
-  const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
-  const esMio = fromId == myId;
+    const { fromId, toId, mensaje, archivo, fecha, fromNombre } = msg;
+    const esMio = fromId == myId;
 
-  // el mensaje entrante nunca es mío
-  const clase = "mensaje-otro";
-  const fechaHora = fecha ? formatearFechaHora(fecha) : "";
+    // Evitar duplicado si ya lo renderizamos localmente
+    if (esMio) return;
 
-  const html = generarBurbujaMensaje({
-    autor: fromNombre,
-    texto: mensaje,
-    archivo,
-    clase,
-    fecha: fechaHora
+    // El receptor debe ver el mensaje como del otro
+    const autor = fromNombre || usuariosMap[fromId] || `Usuario ${fromId}`;
+    const claseMensaje = "mensaje-otro"; // Siempre es del otro al recibir
+    const fechaHora = fecha ? formatearFechaHora(fecha) : "";
+
+    const mensajeHTML = `
+      <div class="${claseMensaje}">
+        <div class="mensaje-texto">
+          <strong>${escapeHtml(autor)}:</strong> ${escapeHtml(mensaje)}
+          ${archivo ? `<br><a href="${BACKEND_URL}/uploads/${escapeHtml(archivo)}" target="_blank">📎 Archivo</a>` : ""}
+        </div>
+        <div class="mensaje-fecha">${escapeHtml(fechaHora)}</div>
+      </div>`;
+
+    if (toId == 0) {
+      const box = document.getElementById("chatGrupalBox");
+      if (box) {
+        box.innerHTML += mensajeHTML;
+        box.scrollTop = box.scrollHeight;
+      }
+    } else if (toId == myId || fromId == myId) {
+      const box = document.getElementById("chatBox");
+      if (box) {
+        box.innerHTML += mensajeHTML;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
   });
-
-  if (toId == 0) {
-    document.getElementById("chatGrupalBox").innerHTML += html;
-    chatGrupalBox.scrollTop = chatGrupalBox.scrollHeight;
-  } else {
-    document.getElementById("chatBox").innerHTML += html;
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-});
 }
 
 // FUNCIÓN CORRECTAMENTE DEFINIDA FUERA DE CONFIGURARSOCKET
@@ -223,53 +248,6 @@ async function enviarMensaje(form, input, toId = 0) {
     ajustarAlturaTextarea(input);
   }
 }
-
-//EStilo de mensaje
-function generarBurbujaMensaje({ autor, texto, archivo, clase, fecha }) {
-  let contenido = "";
-
-  // Si existe archivo
-  if (archivo) {
-    const url = `${BACKEND_URL}/uploads/${escapeHtml(archivo)}`;
-
-    const extension = archivo.split(".").pop().toLowerCase();
-    const esImagen = ["jpg", "jpeg", "png", "gif", "webp"].includes(extension);
-
-    if (esImagen) {
-      contenido = `
-      <div class="${clase}">
-        <div class="mensaje-archivo-imagen">
-          <img src="${url}" onclick="window.open('${url}', '_blank')" />
-        </div>
-        <div class="mensaje-fecha">${fecha}</div>
-      </div>`;
-    } else {
-      contenido = `
-      <div class="${clase}">
-        <div class="mensaje-archivo">
-          <i class="fas fa-file-alt archivo-icono"></i>
-          <div class="archivo-info">
-            <div class="archivo-nombre">${escapeHtml(archivo)}</div>
-            <a href="${url}" target="_blank" class="archivo-descargar">Descargar</a>
-          </div>
-        </div>
-        <div class="mensaje-fecha">${fecha}</div>
-      </div>`;
-    }
-  }
-
-  // Si solo es texto
-  else {
-    contenido = `
-    <div class="${clase}">
-      <div class="mensaje-texto">${escapeHtml(texto)}</div>
-      <div class="mensaje-fecha">${fecha}</div>
-    </div>`;
-  }
-
-  return contenido;
-}
-
 
 function inicializarChat() {
   const inputMensaje = document.getElementById("mensaje");
