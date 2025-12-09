@@ -212,31 +212,18 @@ tr:hover {
 .pagination {
   margin-top: 20px;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.page-btn {
-  padding: 8px 14px;
-  border: 1px solid #cccccc;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 6px;
-  transition: 0.2s ease;
-}
-
-.page-btn:hover {
-  background: #eaeaea;
-}
-
-.page-btn.active {
-  background: #2e86de;
-  color: white;
-  border-color: #2e86de;
+.page-indicator {
+  font-size: 18px;
   font-weight: bold;
-  transform: scale(1.05);
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: white;
 }
 
 /* Contenedor apilado */
