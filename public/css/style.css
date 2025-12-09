@@ -108,3 +108,12 @@ a:hover {
   height: 100vh;
 }
 
+.search-input {
+  width: 350px;       /* 🔥 Aumenta el tamaño */
+  padding: 12px;      /* Más cómodo */
+  font-size: 16px;    /* Más grande y legible */
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  display: block;
+  margin: 0 auto;     /* 🔥 Lo centra horizontalmente */
+}
